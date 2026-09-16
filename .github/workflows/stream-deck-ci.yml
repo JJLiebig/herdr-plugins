@@ -1,0 +1,34 @@
+name: Stream Deck CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "stream-deck/**"
+      - ".github/workflows/stream-deck-ci.yml"
+  pull_request:
+    paths:
+      - "stream-deck/**"
+      - ".github/workflows/stream-deck-ci.yml"
+
+defaults:
+  run:
+    working-directory: stream-deck
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: stream-deck/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run validate -- --no-update-check
+      - run: npm run profile:check
+      - run: npm run package:dry-run

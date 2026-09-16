@@ -1,0 +1,31 @@
+name: Stream Deck release artifacts
+
+on:
+  push:
+    tags: ["stream-deck-v*"]
+
+defaults:
+  run:
+    working-directory: stream-deck
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: stream-deck/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run typecheck
+      - run: npm run package
+      - uses: actions/upload-artifact@v7
+        with:
+          name: herdr-streamdeck-${{ github.ref_name }}
+          path: |
+            stream-deck/dist/*.streamDeckPlugin
+            stream-deck/dist/*.streamDeckProfile
+          if-no-files-found: error

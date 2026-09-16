@@ -6,6 +6,7 @@ Small, independently installable plugins for [Herdr](https://github.com/herdrdev
 | --- | --- | --- |
 | [GitHub](github/) | Shows pull-request status in the Spaces sidebar and opens the current repository or pull request. | `herdr plugin install JJLiebig/herdr-plugins/github` |
 | [Simple Dispatch](simple-dispatch/) | Turns issues, pull requests, features, and fixes into isolated agent workflows. | `herdr plugin install JJLiebig/herdr-plugins/simple-dispatch` |
+| [Herdr Stream Deck+](stream-deck/) | Adds physical triage and control for Herdr on Stream Deck+. | `herdr plugin install JJLiebig/herdr-plugins/stream-deck` |
 
 Install only the plugins you want. Each plugin owns its manifest, dependencies,
 configuration, state, and tests.
