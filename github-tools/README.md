@@ -11,8 +11,9 @@ Requires Node.js and an authenticated [GitHub CLI](https://cli.github.com/).
 herdr plugin install JJLiebig/herdr-plugins/github-tools
 ```
 
-Until Herdr supports plugin-provided sidebar rows, add this to your Herdr
-`config.toml` and run `herdr server reload-config`:
+Until Herdr supports plugin-provided sidebar rows, add this to the Herdr config
+file (`~/.config/herdr/config.toml` on Linux/macOS or
+`%APPDATA%\herdr\config.toml` on Windows), then run `herdr server reload-config`:
 
 ```toml
 [ui.sidebar.spaces]
@@ -27,7 +28,8 @@ install it, and select it in your terminal settings.
 
 ## Keybinds
 
-Optionally bind a key to open the current PR, or the repository if there is no PR:
+To open the current PR (or the repository when there is no PR), add this optional
+keybind to the same Herdr `config.toml`:
 
 ```toml
 [[keys.command]]
