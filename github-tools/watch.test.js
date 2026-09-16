@@ -28,3 +28,23 @@ test("watcher survives a transient health failure, excludes a duplicate, and exi
     }
   }
 });
+
+test("server exit stops an enabled watcher and releases its singleton", async () => {
+  const previous = { id: process.env.HERDR_PLUGIN_ID, socket: process.env.HERDR_SOCKET_PATH };
+  const id = `test-${randomUUID()}`;
+  process.env.HERDR_PLUGIN_ID = id;
+  process.env.HERDR_SOCKET_PATH = id;
+  const request = () => ({ plugins: [{ plugin_id: id, enabled: true, plugin_root: __dirname }] });
+  try {
+    let ticks = 0;
+    for (let run = 0; run < 2; run++) {
+      let alive = true;
+      await watch(() => { ticks++; alive = false; }, 1, request, () => alive);
+    }
+    assert.equal(ticks, 2);
+  } finally {
+    for (const [name, value] of [["HERDR_PLUGIN_ID", previous.id], ["HERDR_SOCKET_PATH", previous.socket]]) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
+  }
+});
