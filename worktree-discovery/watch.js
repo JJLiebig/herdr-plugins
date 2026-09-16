@@ -6,6 +6,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { spawnSync } = require("node:child_process");
+const { once } = require("node:events");
 
 const hash = value => createHash("sha256").update(value).digest("hex").slice(0, 24);
 const scope = () => hash(process.env.HERDR_SOCKET_PATH || "default");
@@ -28,11 +29,7 @@ async function watch(tick, interval = 60000, request = api) {
   const name = `herdr-plugin-${hash(`${os.userInfo().username}:${id}:${scope()}`)}`;
   const endpoint = process.platform === "win32" ? `\\\\.\\pipe\\${name}` : path.join(os.tmpdir(), `${name}.sock`);
   const server = net.createServer(socket => socket.end());
-  const listen = () => new Promise((resolve, reject) => {
-    const fail = error => { server.removeListener("listening", ready); reject(error); };
-    const ready = () => { server.removeListener("error", fail); resolve(); };
-    server.once("error", fail).once("listening", ready).listen(endpoint);
-  });
+  const listen = () => once(server.listen(endpoint), "listening");
   try { await listen(); } catch (error) {
     if (error.code !== "EADDRINUSE") throw error;
     if (process.platform === "win32") return;
