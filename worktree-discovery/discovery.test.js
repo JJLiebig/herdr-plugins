@@ -1,6 +1,8 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
+const digest = value => createHash("sha256").update(value).digest("hex");
 const { reconcile, key, GRACE, terminalPR } = require("./discovery.js");
 
 function fixture() {
@@ -9,11 +11,12 @@ function fixture() {
   const inventory = { source: { repo_key: "/repo/.git", source_checkout_path: "/repo" }, worktrees: [] };
   const closed = [];
   const kept = new Set();
+  let nextWorkspace = 1;
   const io = {
     save: () => {}, kept: id => kept.has(id), exists: id => snapshot.workspaces.some(w => w.workspace_id === id),
     snapshot: () => snapshot, branch: () => "feature", idle: () => true,
     open: (cwd, checkout) => {
-      const workspace = { workspace_id: `w${snapshot.workspaces.length + 1}`, label: "feature", tab_count: 1,
+      const workspace = { workspace_id: `w${nextWorkspace++}`, label: "feature", tab_count: 1,
         focused: false, worktree: { checkout_path: checkout }, tokens: {} };
       const root_pane = { workspace_id: workspace.workspace_id, pane_id: `${workspace.workspace_id}:p1`, terminal_id: `t${snapshot.panes.length}` };
       snapshot.workspaces.push(workspace); snapshot.panes.push(root_pane);
@@ -25,7 +28,7 @@ function fixture() {
   const add = (checkout = "/worktrees/feature") => inventory.worktrees.push({ path: checkout, branch: "feature", is_linked_worktree: true });
   const start = () => { step(); add(); step(); return snapshot.workspaces[0]; };
   const report = (workspace, now, status = "merged", url = "https://github.com/o/r/pull/7") => {
-    workspace.tokens = { github_pr_state: status, github_pr_url: url, github_pr_branch: "feature", github_pr_checked_at: String(now) };
+    workspace.tokens = { github_pr_state: status, github_pr_id: digest(url), github_pr_branch_id: digest("feature"), github_pr_checked_at: String(now) };
   };
   return { state, snapshot, inventory, io, closed, kept, step, add, start, report };
 }
@@ -71,8 +74,8 @@ test("terminal PR needs thirty minutes plus a fresh post-deadline observation; c
 test("reopened, replaced, unknown, stale, or wrong-branch PR cannot inherit a cleanup deadline", () => {
   const f = fixture(); const workspace = f.start(); const now = 10000000;
   for (const change of [
-    { github_pr_state: "open" }, { github_pr_checked_at: "0" }, { github_pr_branch: "other" },
-    { github_pr_state: "unknown" }, { github_pr_url: "https://github.com/o/r/pull/8" },
+    { github_pr_state: "open" }, { github_pr_checked_at: "0" }, { github_pr_branch_id: digest("other") },
+    { github_pr_state: "unknown" }, { github_pr_id: digest("https://github.com/o/r/pull/8") },
   ]) {
     const entry = {};
     f.report(workspace, now); terminalPR(entry, workspace, "feature", now);
@@ -107,6 +110,28 @@ test("removed checkout closes only an untouched idle space; last-minute focus is
 test("no active parent suppresses discovery but existing managed spaces can retire", () => {
   const f = fixture(); f.start(); f.inventory.active = false; f.add("/inactive-new"); f.step();
   assert.equal(f.snapshot.workspaces.length, 1);
-  f.inventory.worktrees = []; f.step(); assert.deepEqual(f.closed, ["w1"]);
+  f.inventory.active = true; f.step();
+  assert.equal(f.snapshot.workspaces.length, 2);
+  f.inventory.worktrees = []; f.step(); assert.deepEqual(f.closed, ["w1", "w2"]);
   assert.ok(f.state.repos[key("/repo/.git")]);
+});
+
+test("a failed open remains retryable and does not block other worktrees or retirement", () => {
+  const f = fixture(); f.start(); f.add("/bad"); f.add("/good");
+  const open = f.io.open;
+  f.io.open = (cwd, checkout) => { if (checkout === "/bad") throw new Error("unavailable"); return open(cwd, checkout); };
+  f.inventory.worktrees = f.inventory.worktrees.filter(w => w.path !== "/worktrees/feature");
+  f.step();
+  assert.deepEqual(f.closed, ["w1"]);
+  assert.ok(f.state.owned[key("/good")]);
+  assert.ok(!f.state.repos[key("/repo/.git")].includes(key("/bad")));
+  f.io.open = open; f.step(); assert.ok(f.state.owned[key("/bad")]);
+});
+
+test("a failing retirement probe does not block another eligible space", () => {
+  const f = fixture(); f.start(); f.add("/second"); f.step(); f.inventory.worktrees = [];
+  f.io.idle = id => { if (id === "w1:p1") throw new Error("probe unavailable"); return true; };
+  f.step();
+  assert.deepEqual(f.closed, ["w2"]);
+  assert.ok(f.state.owned[key("/worktrees/feature")]);
 });

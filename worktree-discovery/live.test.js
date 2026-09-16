@@ -6,7 +6,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
-const { randomUUID } = require("node:crypto");
+const { randomUUID, createHash } = require("node:crypto");
 const { reconcile, GRACE } = require("./discovery.js");
 
 // Opt-in: creates and closes only its own unfocused spaces in the current session.
@@ -57,8 +57,8 @@ test("live Herdr discovery preserves focus and PR retirement leaves the checkout
     assert.equal(snapshot().focused_workspace_id, focus);
     const id = [...owned][0];
     const report = checked => api(["workspace", "report-metadata", id, "--source", "test:github-lifecycle",
-      "--token", "github_pr_url=https://github.com/test/test/pull/1", "--token", "github_pr_state=merged",
-      "--token", "github_pr_branch=feature", "--token", `github_pr_checked_at=${checked}`]);
+      "--token", `github_pr_id=${createHash("sha256").update("https://github.com/test/test/pull/1").digest("hex")}`, "--token", "github_pr_state=merged",
+      "--token", `github_pr_branch_id=${createHash("sha256").update("feature").digest("hex")}`, "--token", `github_pr_checked_at=${checked}`]);
     const started = Date.now();
     report(started); step(started);
     state = JSON.parse(fs.readFileSync(stateFile, "utf8"));

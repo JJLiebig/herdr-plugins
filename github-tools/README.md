@@ -54,7 +54,9 @@ current fallback.
 
 The sidebar includes the PR title. Structured workspace tokens also expose
 `github_pr_url`, `github_pr_state` (`open`, `closed`, or `merged`),
-`github_pr_branch`, and `github_pr_checked_at` (Unix milliseconds). Drafts have
+`github_pr_id`, `github_pr_branch_id`, and `github_pr_checked_at` (Unix milliseconds).
+The identity tokens are SHA-256 hex digests of the full PR URL and branch name,
+respectively, so Herdr's 80-character token limit cannot truncate them. Drafts have
 state `open`. Failed lookups clear lifecycle evidence; a changed branch during
 lookup cannot authorize cleanup. [Worktree Discovery](../worktree-discovery/)
 optionally consumes these tokens; GitHub Tools never closes spaces itself.

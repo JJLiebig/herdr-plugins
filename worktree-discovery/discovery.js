@@ -4,6 +4,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
+const { createHash } = require("node:crypto");
 const { api, hash, scope, watch } = require("./watch.js");
 
 const GRACE = 30 * 60 * 1000;
@@ -41,13 +42,14 @@ function untouched(entry, snapshot, kept) {
 function terminalPR(entry, workspace, branch, now) {
   const tokens = workspace.tokens || {};
   const checked = Number(tokens.github_pr_checked_at);
-  if (!["merged", "closed"].includes(tokens.github_pr_state) || !tokens.github_pr_url
-    || tokens.github_pr_branch !== branch || !branch || !Number.isFinite(checked)
+  const branchId = branch ? createHash("sha256").update(branch).digest("hex") : null;
+  if (!["merged", "closed"].includes(tokens.github_pr_state) || !tokens.github_pr_id
+    || tokens.github_pr_branch_id !== branchId || !branchId || !Number.isFinite(checked)
     || checked > now || now - checked > FRESH) {
     delete entry.terminal;
     return false;
   }
-  const identity = `${tokens.github_pr_url}:${tokens.github_pr_state}:${branch}`;
+  const identity = `${tokens.github_pr_id}:${tokens.github_pr_state}:${branchId}`;
   if (entry.terminal?.identity !== identity) entry.terminal = { identity, since: now };
   return now - entry.terminal.since >= GRACE && checked >= entry.terminal.since + GRACE;
 }
@@ -59,12 +61,15 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
     const entries = inventory.worktrees.filter(w => w.is_linked_worktree && !w.is_bare && !w.is_prunable);
     const current = entries.map(w => key(w.path));
     const previous = state.repos[repo];
+    const failed = new Set();
     if (previous && inventory.active !== false) {
       for (const worktree of entries) {
         const checkout = key(worktree.path);
         if (previous.includes(checkout) || worktree.open_workspace_id) continue;
         // Save successful opens one at a time; a later failed open remains retryable.
-        const opened = io.open(inventory.source.source_checkout_path, worktree.path);
+        let opened;
+        try { opened = io.open(inventory.source.source_checkout_path, worktree.path); }
+        catch (error) { failed.add(checkout); console.error(`${worktree.path}: ${error.message}`); continue; }
         if (!opened.already_open) {
           state.owned[checkout] = {
             repo, path: worktree.path, cwd: inventory.source.source_checkout_path,
@@ -76,11 +81,13 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
         io.save(state);
       }
     }
-    state.repos[repo] = current;
+    state.repos[repo] = current.filter(checkout => !failed.has(checkout)
+      && (inventory.active !== false || !previous || previous.includes(checkout)));
     io.save(state);
   }
 
   for (const [checkout, entry] of Object.entries(state.owned)) {
+    try {
     if (!untouched(entry, snapshot, io.kept(entry.workspaceId))) {
       // The opening snapshot predates spaces created above.
       if (snapshot.workspaces.some(w => w.workspace_id === entry.workspaceId) || io.exists(entry.workspaceId) === false) {
@@ -111,6 +118,7 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
     if (io.kept(entry.workspaceId)) { delete state.owned[checkout]; continue; }
     io.close(entry.workspaceId);
     delete state.owned[checkout];
+    } catch (error) { console.error(`${entry.path}: ${error.message}`); }
     io.save(state);
   }
   io.save(state);

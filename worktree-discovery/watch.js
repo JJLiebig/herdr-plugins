@@ -22,7 +22,7 @@ function api(args) {
 }
 
 // Each independently installable plugin carries this small process wrapper.
-async function watch(tick, interval = 60000) {
+async function watch(tick, interval = 60000, request = api) {
   const id = process.env.HERDR_PLUGIN_ID;
   if (!id || !process.env.HERDR_SOCKET_PATH) throw new Error("Start this action through Herdr.");
   const name = `herdr-plugin-${hash(`${os.userInfo().username}:${id}:${scope()}`)}`;
@@ -47,12 +47,14 @@ async function watch(tick, interval = 60000) {
   }
   try {
     while (true) {
-      const plugin = api(["plugin", "list", "--json"]).plugins.find(item => item.plugin_id === id);
-      if (!plugin?.enabled || fs.realpathSync(plugin.plugin_root) !== fs.realpathSync(__dirname)) break;
-      try { await tick(); } catch (error) { console.error(error.message); }
+      try {
+        const plugin = request(["plugin", "list", "--json"]).plugins.find(item => item.plugin_id === id);
+        if (!plugin?.enabled || fs.realpathSync(plugin.plugin_root) !== fs.realpathSync(__dirname)) break;
+        await tick();
+      } catch (error) { console.error(error.message); }
       await new Promise(resolve => setTimeout(resolve, interval));
     }
-  } finally { server.close(); }
+  } finally { await new Promise(resolve => server.close(resolve)); }
 }
 
 module.exports = { api, hash, scope, watch };

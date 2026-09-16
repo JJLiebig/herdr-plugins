@@ -2,6 +2,7 @@
 "use strict";
 
 const { spawnSync } = require("node:child_process");
+const { createHash } = require("node:crypto");
 
 const herdr = process.env.HERDR_BIN_PATH || "herdr";
 const gh = process.env.GH_BIN_PATH || "gh";
@@ -35,11 +36,14 @@ function isMissingPullRequest(message) {
 }
 
 function lifecycleTokens(pr, branch, checkedAt) {
+  const digest = value => createHash("sha256").update(value).digest("hex");
   return {
     github_pr: pr ? formatPullRequest(pr) : null,
     github_pr_url: pr?.url || null,
     github_pr_state: pr ? (pr.mergedAt ? "merged" : String(pr.state).toLowerCase()) : null,
-    github_pr_branch: branch || null,
+    // Herdr truncates individual metadata tokens to 80 characters.
+    github_pr_id: pr?.url ? digest(pr.url) : null,
+    github_pr_branch_id: branch ? digest(branch) : null,
     github_pr_checked_at: String(checkedAt),
   };
 }

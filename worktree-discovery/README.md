@@ -44,7 +44,9 @@ cannot be made atomic. Use Keep before automating a managed space.
 ## GitHub metadata contract
 
 GitHub Tools owns PR lookup and refresh. This plugin only reads workspace tokens
-`github_pr_url`, `github_pr_state`, `github_pr_branch`, and
+`github_pr_id`, `github_pr_state`, `github_pr_branch_id`, and
 `github_pr_checked_at` (Unix milliseconds). It requires a successful observation
 no older than three minutes and matching the current branch. It does not call
 GitHub, invoke GitHub Tools actions, or read another plugin's private state.
+PR and branch identities are SHA-256 hex digests of the full URL and branch name,
+so they fit Herdr's 80-character token cap without truncation.
