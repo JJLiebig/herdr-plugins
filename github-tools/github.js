@@ -13,6 +13,7 @@ function run(command, args, options = {}) {
     encoding: "utf8",
     stdio: options.inherit ? "inherit" : "pipe",
     windowsHide: true,
+    timeout: 30000,
   });
 }
 
@@ -26,42 +27,58 @@ function context() {
 
 function formatPullRequest(pr) {
   const state = pr.mergedAt ? "merged" : pr.isDraft ? "draft" : String(pr.state).toLowerCase();
-  return `PR #${pr.number} · ${state}`;
+  return `PR #${pr.number} · ${state}${pr.title ? ` · ${pr.title.replace(/[\r\n]+/g, " ")}` : ""}`;
 }
 
 function isMissingPullRequest(message) {
   return /no pull requests found|not a git repository|unable to determine (base )?repository/i.test(message);
 }
 
-function report(workspaceId, pr) {
-  const args = ["workspace", "report-metadata", workspaceId, "--source", metadataSource];
-  if (pr) {
-    args.push("--token", `github_pr=${formatPullRequest(pr)}`, "--token", `github_pr_url=${pr.url}`);
-  } else {
-    args.push("--clear-token", "github_pr", "--clear-token", "github_pr_url");
+function lifecycleTokens(pr, branch, checkedAt) {
+  return {
+    github_pr: pr ? formatPullRequest(pr) : null,
+    github_pr_url: pr?.url || null,
+    github_pr_state: pr ? (pr.mergedAt ? "merged" : String(pr.state).toLowerCase()) : null,
+    github_pr_branch: branch || null,
+    github_pr_checked_at: String(checkedAt),
+  };
+}
+
+function report(workspaceId, tokens, seq) {
+  const args = ["workspace", "report-metadata", workspaceId, "--source", metadataSource, "--seq", String(seq)];
+  for (const [name, value] of Object.entries(tokens)) {
+    args.push(...(value === null ? ["--clear-token", name] : ["--token", `${name}=${value}`]));
   }
   const result = run(herdr, args);
   if (result.status !== 0) throw new Error(result.stderr.trim() || "failed to report workspace metadata");
 }
 
 function pullRequest(cwd) {
-  const result = run(gh, ["pr", "view", "--json", "number,state,isDraft,mergedAt,url"], { cwd });
+  const result = run(gh, ["pr", "view", "--json", "number,title,state,isDraft,mergedAt,url,headRefName"], { cwd });
   if (result.error) throw result.error;
   if (result.status !== 0) {
     const message = result.stderr.trim();
     if (isMissingPullRequest(message)) return null;
     throw new Error(message || "GitHub pull-request lookup failed");
   }
-  try {
-    return JSON.parse(result.stdout);
-  } catch {
-    return null;
-  }
+  return JSON.parse(result.stdout);
 }
 
 function refresh(workspaceId, cwd) {
   if (!workspaceId || !cwd) return;
-  report(workspaceId, pullRequest(cwd));
+  const seq = Date.now();
+  try {
+    const before = run("git", ["symbolic-ref", "--quiet", "--short", "HEAD"], { cwd });
+    const pr = pullRequest(cwd);
+    const after = run("git", ["symbolic-ref", "--quiet", "--short", "HEAD"], { cwd });
+    const branch = before.status === 0 && after.status === 0 && before.stdout === after.stdout
+      ? before.stdout.trim() : null;
+    // A branch change during the lookup must never authorize cleanup.
+    report(workspaceId, lifecycleTokens(pr, pr && pr.headRefName !== branch ? null : branch, Date.now()), seq);
+  } catch (error) {
+    report(workspaceId, lifecycleTokens(null, null, 0), seq);
+    throw error;
+  }
 }
 
 function snapshotTargets(snapshot) {
@@ -116,6 +133,7 @@ function open(kind) {
 }
 
 function main(mode = process.argv[2]) {
+  if (mode === "watch") return require("./watch.js").watch(refreshAll);
   if (mode === "refresh-all") return refreshAll();
   if (mode === "refresh-current") {
     const target = currentTarget();
@@ -128,12 +146,10 @@ function main(mode = process.argv[2]) {
 }
 
 if (require.main === module) {
-  try {
-    main();
-  } catch (error) {
+  Promise.resolve().then(() => main()).catch(error => {
     console.error(error.message);
     process.exitCode = 1;
-  }
+  });
 }
 
-module.exports = { formatPullRequest, isMissingPullRequest, snapshotTargets };
+module.exports = { formatPullRequest, isMissingPullRequest, snapshotTargets, lifecycleTokens };

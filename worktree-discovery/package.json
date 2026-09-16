@@ -1,0 +1,6 @@
+{
+  "name": "herdr-plugin-worktree-discovery",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "check": "node --check discovery.js && node --check watch.js && node --test" }
+}

@@ -2,11 +2,21 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { formatPullRequest, isMissingPullRequest, snapshotTargets } = require("./github.js");
+const { formatPullRequest, isMissingPullRequest, snapshotTargets, lifecycleTokens } = require("./github.js");
 
 test("formats GitHub pull-request states", () => {
   assert.equal(formatPullRequest({ number: 7, state: "OPEN", isDraft: true, mergedAt: null }), "PR #7 · draft");
   assert.equal(formatPullRequest({ number: 8, state: "CLOSED", isDraft: false, mergedAt: "2026-01-01" }), "PR #8 · merged");
+});
+
+test("lifecycle metadata separates draft presentation from state and clears absent PRs", () => {
+  assert.deepEqual(lifecycleTokens({ number: 9, title: "Fix\nwidgets", state: "OPEN", isDraft: true, url: "https://github.com/o/r/pull/9" }, "fix", 123), {
+    github_pr: "PR #9 · draft · Fix widgets", github_pr_url: "https://github.com/o/r/pull/9",
+    github_pr_state: "open", github_pr_branch: "fix", github_pr_checked_at: "123",
+  });
+  assert.deepEqual(lifecycleTokens(null, null, 0), {
+    github_pr: null, github_pr_url: null, github_pr_state: null, github_pr_branch: null, github_pr_checked_at: "0",
+  });
 });
 
 test("distinguishes no pull request from provider failures", () => {

@@ -1,12 +1,18 @@
 id = "jjliebig.github-tools"
 name = "GitHub Tools"
-version = "0.1.0"
+version = "0.2.0"
 min_herdr_version = "0.8.2"
 description = "Show and open the pull request for each Herdr workspace."
 platforms = ["linux", "macos", "windows"]
 
 [[startup]]
-command = ["node", "github.js", "refresh-all"]
+command = ["node", "github.js", "watch"]
+
+[[actions]]
+id = "watch"
+title = "Start automatic PR refresh"
+contexts = ["global"]
+command = ["node", "github.js", "watch"]
 
 [[actions]]
 id = "refresh"

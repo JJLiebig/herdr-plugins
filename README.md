@@ -5,6 +5,7 @@ Small, independently installable plugins for [Herdr](https://github.com/herdrdev
 | Plugin | What it does | Install |
 | --- | --- | --- |
 | [GitHub Tools](github-tools/) | Shows pull-request status in the Spaces sidebar and opens the current repository or pull request. | `herdr plugin install JJLiebig/herdr-plugins/github-tools` |
+| [Worktree Discovery](worktree-discovery/) | Automatically shows new agent worktrees and retires untouched spaces after their PR closes. | `herdr plugin install JJLiebig/herdr-plugins/worktree-discovery` |
 | [Simple Dispatch](simple-dispatch/) | Turns issues, pull requests, features, and fixes into isolated agent workflows. | `herdr plugin install JJLiebig/herdr-plugins/simple-dispatch` |
 | [Herdr Stream Deck+](stream-deck/) | Adds physical triage and control for Herdr on Stream Deck+. | `herdr plugin install JJLiebig/herdr-plugins/stream-deck` |
 
