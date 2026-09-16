@@ -36,7 +36,9 @@ above, replace `$github_pr` with `$github_pr_nerd`, then run
 `herdr server reload-config`.
 
 The default `$github_pr` uses portable symbols. Nerd Font glyphs will not
-display correctly unless your terminal uses a font that contains them.
+display correctly unless your terminal uses a font that contains them. Herdr
+does not yet support per-plugin settings in `config.toml`, so selecting the
+sidebar token is how you choose the icon style for now.
 
 ## Keybinds
 
