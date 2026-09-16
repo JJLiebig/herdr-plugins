@@ -4,20 +4,22 @@ const assert = require("node:assert/strict");
 const { randomUUID } = require("node:crypto");
 const { watch } = require("./watch.js");
 
-test("replacement server waits for the old singleton during overlapping handoff", async () => {
+for (const reload of [false, true]) test(`replacement waits during ${reload ? "same-server code reload" : "server handoff"}`, async () => {
   const previous = { id: process.env.HERDR_PLUGIN_ID, socket: process.env.HERDR_SOCKET_PATH };
   const id = `test-${randomUUID()}`;
   process.env.HERDR_PLUGIN_ID = id;
   process.env.HERDR_SOCKET_PATH = id;
-  let oldAlive = true, newAlive = true, ready;
+  let oldAlive = true, newAlive = true, ready, generation = "old";
+  const version = () => generation;
   const started = new Promise(resolve => { ready = resolve; });
   const request = () => ({ plugins: [{ plugin_id: id, enabled: true, plugin_root: __dirname }] });
   let replacementTicks = 0;
   try {
-    const old = watch(() => ready(), 20, request, () => oldAlive, 100);
+    const old = watch(() => ready(), 20, request, () => oldAlive, 100, version);
     await started;
-    const replacement = watch(() => { replacementTicks++; newAlive = false; }, 1, request, () => newAlive, 200);
-    setTimeout(() => { oldAlive = false; }, 10);
+    if (reload) generation = "new";
+    const replacement = watch(() => { replacementTicks++; newAlive = false; }, 1, request, () => newAlive, reload ? 100 : 200, version);
+    if (!reload) setTimeout(() => { oldAlive = false; }, 10);
     await Promise.all([old, replacement]);
     assert.equal(replacementTicks, 1);
   } finally {

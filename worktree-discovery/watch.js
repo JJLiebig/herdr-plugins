@@ -28,12 +28,19 @@ function parentAlive() {
   try { process.kill(parentPid, 0); return true; }
   catch (error) { if (error.code === "ESRCH") return false; throw error; }
 }
-async function watch(tick, interval = 60000, request = api, alive = parentAlive, owner = parentPid) {
+function codeVersion() {
+  return hash(fs.realpathSync(__dirname) + fs.readdirSync(__dirname).sort()
+    .filter(name => name.endsWith(".js") && !name.endsWith(".test.js"))
+    .map(name => fs.readFileSync(path.join(__dirname, name), "utf8")).join("\n"));
+}
+async function watch(tick, interval = 60000, request = api, alive = parentAlive, owner = parentPid, version = codeVersion) {
   const id = process.env.HERDR_PLUGIN_ID;
   if (!id || !process.env.HERDR_SOCKET_PATH) throw new Error("Start this action through Herdr.");
   const name = `herdr-plugin-${hash(`${os.userInfo().username}:${id}:${scope()}`)}`;
   const endpoint = process.platform === "win32" ? `\\\\.\\pipe\\${name}` : path.join(os.tmpdir(), `${name}.sock`);
-  const server = net.createServer(socket => socket.end(String(owner)));
+  const startedVersion = version();
+  const identity = `${owner}:${startedVersion}`;
+  const server = net.createServer(socket => socket.end(identity));
   const listen = () => once(server.listen(endpoint), "listening");
   while (true) {
     try { await listen(); break; } catch (error) {
@@ -49,7 +56,7 @@ async function watch(tick, interval = 60000, request = api, alive = parentAlive,
           else reject(err);
         });
       });
-      if (occupant === String(owner) || !alive()) return;
+      if (occupant === identity || !alive() || version() !== startedVersion) return;
       if (occupant === null && process.platform !== "win32") {
         try { fs.unlinkSync(endpoint); } catch (err) { if (err.code !== "ENOENT") throw err; }
       }
@@ -57,7 +64,7 @@ async function watch(tick, interval = 60000, request = api, alive = parentAlive,
     }
   }
   try {
-    while (alive()) {
+    while (alive() && version() === startedVersion) {
       try {
         const plugin = request(["plugin", "list", "--json"]).plugins.find(item => item.plugin_id === id);
         if (!plugin?.enabled || fs.realpathSync(plugin.plugin_root) !== fs.realpathSync(__dirname)) break;
