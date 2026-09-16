@@ -1,0 +1,26 @@
+name: Simple Dispatch CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "simple-dispatch/**"
+      - ".github/workflows/simple-dispatch-ci.yml"
+  pull_request:
+    paths:
+      - "simple-dispatch/**"
+      - ".github/workflows/simple-dispatch-ci.yml"
+
+defaults:
+  run:
+    working-directory: simple-dispatch
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run check

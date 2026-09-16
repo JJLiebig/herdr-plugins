@@ -6,6 +6,8 @@ isolated agent workspace. Supports every Herdr agent kind that reports a stable
 session, and is built around per-harness adapters so new kinds are a one-line
 addition.
 
+Loosely inspired by Can's [GitHub Start plugin](https://github.com/ogulcancelik/herdr-plugin-github-start).
+
 ## Harnesses
 
 Pick the harness in the workflow popup. The first row is a selector:

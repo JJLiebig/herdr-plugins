@@ -1,0 +1,26 @@
+name: GitHub Tools CI
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "github-tools/**"
+      - ".github/workflows/github-tools-ci.yml"
+  pull_request:
+    paths:
+      - "github-tools/**"
+      - ".github/workflows/github-tools-ci.yml"
+
+defaults:
+  run:
+    working-directory: github-tools
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run check
