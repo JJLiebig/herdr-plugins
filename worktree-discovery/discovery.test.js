@@ -84,17 +84,28 @@ test("reopened, replaced, unknown, stale, or wrong-branch PR cannot inherit a cl
   }
 });
 
-test("focus, user changes, extra panes, and replacement terminal relinquish ownership", () => {
+test("explicit Keep, user changes, extra panes, and replacement terminal relinquish ownership", () => {
   for (const change of [
-    f => f.kept.add("w1"), f => { f.snapshot.workspaces[0].focused = true; },
+    f => f.kept.add("w1"),
     f => { f.snapshot.workspaces[0].label = "mine"; },
     f => { f.snapshot.panes[0].agent = "codex"; },
     f => { f.snapshot.panes[0].terminal_id = "new"; },
     f => f.snapshot.panes.push({ workspace_id: "w1", pane_id: "extra" }),
   ]) {
-    const f = fixture(); f.start(); change(f); f.inventory.worktrees = []; f.step();
+    const f = fixture(); f.start(); change(f); f.step(); f.inventory.worktrees = []; f.step();
     assert.deepEqual(f.closed, []); assert.deepEqual(f.state.owned, {});
   }
+});
+
+test("visiting a space preserves ownership and removed worktrees retire after focus leaves", () => {
+  const f = fixture(); const workspace = f.start();
+  workspace.focused = true; f.step();
+  assert.ok(f.state.owned[key("/worktrees/feature")]);
+  f.inventory.worktrees = []; workspace.label = ".codex"; f.step();
+  assert.deepEqual(f.closed, []);
+  assert.ok(f.state.owned[key("/worktrees/feature")]);
+  workspace.focused = false; f.step();
+  assert.deepEqual(f.closed, ["w1"]);
 });
 
 test("removed checkout closes only an untouched idle space; last-minute focus is preserved", () => {
@@ -105,6 +116,13 @@ test("removed checkout closes only an untouched idle space; last-minute focus is
   assert.deepEqual(g.closed, []);
   const h = fixture(); h.start(); h.inventory.worktrees = []; h.io.idle = () => false; h.step();
   assert.deepEqual(h.closed, []);
+  assert.ok(h.state.owned[key("/worktrees/feature")]);
+  h.io.idle = () => true; h.step(); assert.deepEqual(h.closed, ["w1"]);
+  const i = fixture(); const workspace = i.start(); i.inventory.worktrees = [];
+  i.io.snapshot = () => { workspace.focused = true; return i.snapshot; }; i.step();
+  assert.deepEqual(i.closed, []); assert.ok(i.state.owned[key("/worktrees/feature")]);
+  workspace.focused = false; i.io.snapshot = () => i.snapshot; i.step();
+  assert.deepEqual(i.closed, ["w1"]);
 });
 
 test("no active parent suppresses discovery but existing managed spaces can retire", () => {

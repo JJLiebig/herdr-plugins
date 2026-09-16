@@ -19,7 +19,3 @@ id = "keep"
 title = "Keep this workspace"
 contexts = ["workspace"]
 command = ["node", "discovery.js", "keep"]
-
-[[events]]
-on = "workspace.focused"
-command = ["node", "discovery.js", "keep"]
