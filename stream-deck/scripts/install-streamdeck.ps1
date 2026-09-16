@@ -5,12 +5,16 @@ $source = Join-Path $root "dev.herdr.streamdeck.sdPlugin"
 $herdr = (Get-Command herdr -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $output = Join-Path $root "dist"
 $package = Join-Path $output "herdr-streamdeck.streamDeckPlugin"
+$streamDeckExe = Join-Path $env:ProgramFiles "Elgato\StreamDeck\StreamDeck.exe"
 $zip = "$package.zip"
 $staging = Join-Path ([IO.Path]::GetTempPath()) "herdr-streamdeck-install-$([guid]::NewGuid())"
 $stagedPlugin = Join-Path $staging "dev.herdr.streamdeck.sdPlugin"
 
 if (-not (Test-Path (Join-Path $source "bin\plugin.js"))) {
     throw "The prebuilt Stream Deck plugin is missing."
+}
+if (-not (Test-Path -LiteralPath $streamDeckExe)) {
+    throw "Stream Deck software is required at $streamDeckExe."
 }
 
 New-Item -ItemType Directory -Force $output, $staging | Out-Null
@@ -30,7 +34,7 @@ try {
     # Launch a copy so Herdr can move its temporary plugin checkout into place.
     $installer = Join-Path ([IO.Path]::GetTempPath()) "herdr-streamdeck-$([guid]::NewGuid()).streamDeckPlugin"
     Copy-Item -LiteralPath $package -Destination $installer
-    Start-Process $installer -WorkingDirectory ([IO.Path]::GetTempPath())
+    Start-Process -FilePath $streamDeckExe -ArgumentList ('"' + $installer + '"') -WorkingDirectory ([IO.Path]::GetTempPath())
     Write-Host "Opened the Stream Deck installer. Accept its install prompt to finish."
 } finally {
     Remove-Item -LiteralPath $staging -Recurse -Force
