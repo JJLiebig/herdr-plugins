@@ -3,6 +3,14 @@
 Shows the pull request associated with each Git workspace and provides actions
 to refresh it or open the current repository or pull request in a browser.
 
+## Visual direction
+
+These screenshots came from the earlier [Herdr PR #4089](https://github.com/herdrdev/herdr/pull/4089). They show a proposed native sidebar treatment, not the exact output of this plugin. GitHub Tools reports text through the `$github_pr` sidebar token; it does not provide the pictured symbol or Nerd Font icon modes.
+
+| Before | Symbols | Nerd Font |
+| --- | --- | --- |
+| <img src="assets/pr4089-before-off.png" width="260" alt="Spaces sidebar before pull-request indicators"> | <img src="assets/pr4089-symbols.png" width="260" alt="Proposed pull-request indicators using portable symbols"> | <img src="assets/pr4089-nerd-font.png" width="260" alt="Proposed pull-request indicators using Nerd Font icons"> |
+
 ## Install
 
 ```powershell
