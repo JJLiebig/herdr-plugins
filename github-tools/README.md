@@ -20,6 +20,13 @@ file (`~/.config/herdr/config.toml` on Linux/macOS or
 rows = [["state_icon", "workspace"], ["branch", "git_status", "$github_pr"]]
 ```
 
+Then run `herdr server reload-config`. The plugin refreshes every minute while
+Herdr runs, and when a workspace is created, updated, or focused. After installing
+into an already running Herdr session, start automatic refresh with
+`herdr plugin action invoke jjliebig.github-tools.watch`. Repeating it is harmless.
+Use the
+`jjliebig.github-tools.refresh` action for an explicit refresh.
+
 ## Nerd Fonts
 
 To use Nerd Font PR glyphs, install a font such as
@@ -44,4 +51,20 @@ command = "jjliebig.github-tools.open-current"
 description = "open GitHub PR or repository"
 ```
 
-Run `herdr server reload-config` after changing the keybind.
+Then run `herdr server reload-config`.
+
+If you installed the former `jjliebig.github` plugin, uninstall it before
+installing GitHub Tools: `herdr plugin uninstall jjliebig.github`.
+
+Herdr does not yet let plugins make sidebar metadata clickable. The
+`open-current`, `open-pull-request`, and `open-repository` actions provide the
+current fallback.
+
+The sidebar includes the PR title. Structured workspace tokens also expose
+`github_pr_url`, `github_pr_state` (`open`, `closed`, or `merged`),
+`github_pr_id`, `github_pr_branch_id`, and `github_pr_checked_at` (Unix milliseconds).
+The identity tokens are SHA-256 hex digests of the full PR URL and branch name,
+respectively, so Herdr's 80-character token limit cannot truncate them. Drafts have
+state `open`. Failed lookups clear lifecycle evidence; a changed branch during
+lookup cannot authorize cleanup. [Worktree Discovery](../worktree-discovery/)
+optionally consumes these tokens; GitHub Tools never closes spaces itself.

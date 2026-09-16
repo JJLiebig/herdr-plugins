@@ -1,0 +1,22 @@
+name: Worktree Discovery CI
+
+on:
+  push:
+    branches: [master]
+    paths: ["worktree-discovery/**", ".github/workflows/worktree-discovery-ci.yml"]
+  pull_request:
+    paths: ["worktree-discovery/**", ".github/workflows/worktree-discovery-ci.yml"]
+
+defaults:
+  run:
+    working-directory: worktree-discovery
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run check

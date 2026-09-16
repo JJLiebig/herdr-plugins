@@ -1,0 +1,25 @@
+id = "jjliebig.worktree-discovery"
+name = "Worktree Discovery"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Show new worktrees while a repository has an agent session."
+platforms = ["linux", "macos", "windows"]
+
+[[startup]]
+command = ["node", "discovery.js", "watch"]
+
+[[actions]]
+id = "watch"
+title = "Start worktree discovery"
+contexts = ["global"]
+command = ["node", "discovery.js", "watch"]
+
+[[actions]]
+id = "keep"
+title = "Keep this workspace"
+contexts = ["workspace"]
+command = ["node", "discovery.js", "keep"]
+
+[[events]]
+on = "workspace.focused"
+command = ["node", "discovery.js", "keep"]
