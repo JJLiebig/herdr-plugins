@@ -38,6 +38,7 @@ test("live Herdr discovery preserves focus and PR retirement leaves the checkout
       save: value => fs.writeFileSync(stateFile, JSON.stringify(value)), kept: () => false,
       exists: id => snapshot().workspaces.some(w => w.workspace_id === id), snapshot,
       branch: cwd => run("git", ["symbolic-ref", "--quiet", "--short", "HEAD"], cwd).trim(),
+      rename: (id, label) => api(["workspace", "rename", id, label]),
       idle: id => {
         const info = api(["pane", "process-info", "--pane", id]).process_info;
         return !!info.shell_pid && info.foreground_processes.length === 1 && info.foreground_processes[0].pid === info.shell_pid;
@@ -56,6 +57,8 @@ test("live Herdr discovery preserves focus and PR retirement leaves the checkout
     assert.equal(owned.size, 1);
     assert.equal(snapshot().focused_workspace_id, focus);
     const id = [...owned][0];
+    step(Date.now());
+    assert.equal(snapshot().workspaces.find(w => w.workspace_id === id).label, "feature");
     const report = checked => api(["workspace", "report-metadata", id, "--source", "test:github-lifecycle",
       "--token", `github_pr_id=${createHash("sha256").update("https://github.com/test/test/pull/1").digest("hex")}`, "--token", "github_pr_state=merged",
       "--token", `github_pr_branch_id=${createHash("sha256").update("feature").digest("hex")}`, "--token", `github_pr_checked_at=${checked}`]);

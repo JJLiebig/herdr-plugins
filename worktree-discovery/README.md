@@ -3,6 +3,8 @@
 New worktrees appear under their repository in Herdr while that repository has
 an agent session, including an idle or waiting agent. Focus stays where it is.
 Works with any agent Herdr recognizes; Codex and Symphony++ are not required.
+Auto-added spaces use their branch name and follow branch changes while managed.
+Without a branch, discovery keeps the existing name. Explicit user renames are preserved.
 
 ```powershell
 herdr plugin install JJLiebig/herdr-plugins/worktree-discovery
