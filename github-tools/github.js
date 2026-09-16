@@ -7,6 +7,10 @@ const { createHash } = require("node:crypto");
 const herdr = process.env.HERDR_BIN_PATH || "herdr";
 const gh = process.env.GH_BIN_PATH || "gh";
 const metadataSource = "plugin:jjliebig.github-tools";
+const icons = {
+  symbols: { open: "○", draft: "◇", closed: "×", merged: "◆" },
+  nerd_font: { open: "", draft: "", closed: "", merged: "" },
+};
 
 function run(command, args, options = {}) {
   return spawnSync(command, args, {
@@ -26,9 +30,9 @@ function context() {
   }
 }
 
-function formatPullRequest(pr) {
+function formatPullRequest(pr, style = "symbols") {
   const state = pr.mergedAt ? "merged" : pr.isDraft ? "draft" : String(pr.state).toLowerCase();
-  return `PR #${pr.number} · ${state}${pr.title ? ` · ${pr.title.replace(/[\r\n]+/g, " ")}` : ""}`;
+  return `${icons[style][state]} #${pr.number}${pr.title ? ` · ${pr.title.replace(/[\r\n]+/g, " ")}` : ""}`;
 }
 
 function isMissingPullRequest(message) {
@@ -39,6 +43,7 @@ function lifecycleTokens(pr, branch, checkedAt) {
   const digest = value => createHash("sha256").update(value).digest("hex");
   return {
     github_pr: pr ? formatPullRequest(pr) : null,
+    github_pr_nerd: pr ? formatPullRequest(pr, "nerd_font") : null,
     github_pr_url: pr?.url || null,
     github_pr_state: pr ? (pr.mergedAt ? "merged" : String(pr.state).toLowerCase()) : null,
     // Herdr truncates individual metadata tokens to 80 characters.

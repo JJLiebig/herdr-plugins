@@ -1,25 +1,19 @@
 # GitHub Tools
 
-Shows the pull request associated with each Git workspace and provides actions
-to refresh it or open the current repository or pull request in a browser.
-
-## Visual direction
-
-These screenshots came from the earlier [Herdr PR #4089](https://github.com/herdrdev/herdr/pull/4089). They show a proposed native sidebar treatment, not the exact output of this plugin. GitHub Tools reports text through the `$github_pr` sidebar token; it does not provide the pictured symbol or Nerd Font icon modes.
-
-| Before | Symbols | Nerd Font |
-| --- | --- | --- |
-| <img src="assets/pr4089-before-off.png" width="260" alt="Spaces sidebar before pull-request indicators"> | <img src="assets/pr4089-symbols.png" width="260" alt="Proposed pull-request indicators using portable symbols"> | <img src="assets/pr4089-nerd-font.png" width="260" alt="Proposed pull-request indicators using Nerd Font icons"> |
+Show the current branch's pull request in Herdr's Spaces sidebar (`○ #123` for
+open, `◇` draft, `×` closed, `◆` merged).
 
 ## Install
 
-```powershell
+Requires Node.js and an authenticated [GitHub CLI](https://cli.github.com/).
+
+```sh
 herdr plugin install JJLiebig/herdr-plugins/github-tools
 ```
 
-Requires Node.js, GitHub CLI authentication, and Herdr 0.8.2 or newer.
-
-Add the reported pull request to the Spaces sidebar:
+Until Herdr supports plugin-provided sidebar rows, add this to the Herdr config
+file (`~/.config/herdr/config.toml` on Linux/macOS or
+`%APPDATA%\herdr\config.toml` on Windows), then run `herdr server reload-config`:
 
 ```toml
 [ui.sidebar.spaces]
@@ -33,7 +27,21 @@ into an already running Herdr session, start automatic refresh with
 Use the
 `jjliebig.github-tools.refresh` action for an explicit refresh.
 
-To open the current pull request, or the repository if there is no PR, add:
+## Nerd Fonts
+
+To use Nerd Font PR glyphs, install a font such as
+[JetBrainsMono Nerd Font Mono](https://www.nerdfonts.com/font-downloads) and
+select it in the terminal displaying Herdr. In the sidebar `rows` setting
+above, replace `$github_pr` with `$github_pr_nerd`, then run
+`herdr server reload-config`.
+
+The default `$github_pr` uses portable symbols. Nerd Font glyphs will not
+display correctly unless your terminal uses a font that contains them.
+
+## Keybinds
+
+To open the current PR (or the repository when there is no PR), add this optional
+keybind to the same Herdr `config.toml`:
 
 ```toml
 [[keys.command]]
