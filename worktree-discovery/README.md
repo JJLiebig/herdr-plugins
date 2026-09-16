@@ -20,8 +20,8 @@ it dismissed until the worktree is removed and later recreated.
 
 ## Keeping and retiring spaces
 
-Focusing an automatically added space makes it yours. You can also use
-`jjliebig.worktree-discovery.keep`. Spaces with a changed name, another tab or
+Visiting an automatically added space does not make it permanent. Use
+`jjliebig.worktree-discovery.keep` to keep it. Spaces with a changed name, another tab or
 pane, a replacement terminal, or an agent are also left alone. Ownership and
 dismissals survive plugin restarts; a replaced terminal is never reclaimed.
 
@@ -31,13 +31,17 @@ merged or closed. A fresh observation after the deadline must still confirm
 that PR and branch. A reopened/replaced PR or failed/stale lookup resets the
 wait. Without GitHub Tools, discovery still works; PR-based retirement does not.
 
-Removing a worktree also retires its untouched space. Retirement continues for
+Removing a worktree retires its auto-added space on the next scan (normally within
+ten seconds), without waiting for a PR or the 30-minute grace period. Automatic
+label changes after removal do not prevent cleanup. A focused space or busy shell
+waits until you leave it or the command finishes, then cleanup retries.
+Retirement continues for
 already managed spaces after the parent agent exits. Worktree directories,
 branches, commits, and files are **never deleted** by this plugin.
 
 Only the plugin's original, unfocused, single-shell space is eligible. The
 plugin checks again before closing and leaves foreground processes alone.
-Herdr has no atomic conditional-close API or input-history API: focus events
+Herdr has no atomic conditional-close API or input-history API: live focus checks
 protect interactive use, but an external automation racing the final check
 cannot be made atomic. Use Keep before automating a managed space.
 

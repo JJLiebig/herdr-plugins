@@ -28,8 +28,10 @@ session; future Herdr sessions start it automatically.
 
 Pair it with **GitHub Tools** for PR status and automatic retirement: untouched
 spaces close 30 minutes after their PR is observed as merged or closed. Only
-spaces opened by discovery are eligible. Focusing or customizing one keeps it
-yours. Worktree files and branches are never deleted.
+spaces opened by discovery are eligible. Visiting one only pauses cleanup while
+it is focused; explicit Keep or customization makes it yours. Removed worktrees
+lose their idle, unfocused auto-added views on the next scan. Worktree files and
+branches are never deleted.
 
 See the [Worktree Discovery guide](worktree-discovery/) for ownership rules and
 the [GitHub Tools setup](github-tools/) for sidebar configuration.

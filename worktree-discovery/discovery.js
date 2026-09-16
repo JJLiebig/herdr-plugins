@@ -29,10 +29,10 @@ function save(file, state) {
   fs.renameSync(`${file}.tmp`, file);
 }
 
-function untouched(entry, snapshot, kept) {
+function untouched(entry, snapshot, kept, removed = false) {
   const workspace = snapshot.workspaces.find(w => w.workspace_id === entry.workspaceId);
   const panes = snapshot.panes.filter(p => p.workspace_id === entry.workspaceId);
-  return !!workspace && !kept && !workspace.focused && workspace.label === entry.label
+  return !!workspace && !kept && (removed || workspace.label === entry.label)
     && workspace.tab_count === 1 && panes.length === 1
     && panes[0].pane_id === entry.paneId && panes[0].terminal_id === entry.terminalId
     && !panes[0].agent && !panes[0].agent_session
@@ -88,33 +88,34 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
 
   for (const [checkout, entry] of Object.entries(state.owned)) {
     try {
-    if (!untouched(entry, snapshot, io.kept(entry.workspaceId))) {
+    const inventory = inventories.find(item => key(item.source.repo_key) === entry.repo);
+    const worktree = inventory?.worktrees.find(w => key(w.path) === checkout && !w.is_prunable);
+    const removed = !!inventory && !worktree;
+    if (!untouched(entry, snapshot, io.kept(entry.workspaceId), removed)) {
       // The opening snapshot predates spaces created above.
       if (snapshot.workspaces.some(w => w.workspace_id === entry.workspaceId) || io.exists(entry.workspaceId) === false) {
         delete state.owned[checkout];
       }
       continue;
     }
-    const inventory = inventories.find(item => key(item.source.repo_key) === entry.repo);
     if (!inventory) continue; // Git lookup failed: leave the space alone.
-    const worktree = inventory.worktrees.find(w => key(w.path) === checkout && !w.is_prunable);
     const workspace = snapshot.workspaces.find(w => w.workspace_id === entry.workspaceId);
     const expired = terminalPR(entry, workspace, worktree?.branch, now);
-    if (worktree && !expired) continue;
+    if (workspace.focused || (worktree && !expired)) continue;
 
     // Recheck immediately before closing; workspace close also terminates terminals.
     const latest = io.snapshot();
-    if (!untouched(entry, latest, io.kept(entry.workspaceId))) {
+    if (!untouched(entry, latest, io.kept(entry.workspaceId), removed)) {
       delete state.owned[checkout];
       continue;
     }
     const latestWorkspace = latest.workspaces.find(w => w.workspace_id === entry.workspaceId);
+    if (latestWorkspace.focused) continue;
     if (worktree && !terminalPR(entry, latestWorkspace, io.branch(entry.path), now)) continue;
     if (!io.idle(entry.paneId)) {
-      delete state.owned[checkout];
       continue;
     }
-    // Focus events write independently even while this process waits on CLI calls.
+    // Explicit Keep can arrive while this process waits on CLI calls.
     if (io.kept(entry.workspaceId)) { delete state.owned[checkout]; continue; }
     io.close(entry.workspaceId);
     delete state.owned[checkout];
