@@ -28,24 +28,33 @@ function parentAlive() {
   try { process.kill(parentPid, 0); return true; }
   catch (error) { if (error.code === "ESRCH") return false; throw error; }
 }
-async function watch(tick, interval = 60000, request = api, alive = parentAlive) {
+async function watch(tick, interval = 60000, request = api, alive = parentAlive, owner = parentPid) {
   const id = process.env.HERDR_PLUGIN_ID;
   if (!id || !process.env.HERDR_SOCKET_PATH) throw new Error("Start this action through Herdr.");
   const name = `herdr-plugin-${hash(`${os.userInfo().username}:${id}:${scope()}`)}`;
   const endpoint = process.platform === "win32" ? `\\\\.\\pipe\\${name}` : path.join(os.tmpdir(), `${name}.sock`);
-  const server = net.createServer(socket => socket.end());
+  const server = net.createServer(socket => socket.end(String(owner)));
   const listen = () => once(server.listen(endpoint), "listening");
-  try { await listen(); } catch (error) {
-    if (error.code !== "EADDRINUSE") throw error;
-    if (process.platform === "win32") return;
-    const alive = await new Promise(resolve => {
-      const client = net.connect(endpoint);
-      client.once("connect", () => { client.destroy(); resolve(true); });
-      client.once("error", err => resolve(err.code !== "ECONNREFUSED"));
-    });
-    if (alive) return;
-    fs.unlinkSync(endpoint);
-    try { await listen(); } catch (err) { if (err.code === "EADDRINUSE") return; throw err; }
+  while (true) {
+    try { await listen(); break; } catch (error) {
+      if (error.code !== "EADDRINUSE") throw error;
+      const occupant = await new Promise((resolve, reject) => {
+        const client = net.connect(endpoint);
+        let data = "";
+        client.setEncoding("utf8");
+        client.on("data", chunk => { data += chunk; });
+        client.once("end", () => resolve(data));
+        client.once("error", err => {
+          if (["ECONNREFUSED", "ENOENT"].includes(err.code)) resolve(null);
+          else reject(err);
+        });
+      });
+      if (occupant === String(owner) || !alive()) return;
+      if (occupant === null && process.platform !== "win32") {
+        try { fs.unlinkSync(endpoint); } catch (err) { if (err.code !== "ENOENT") throw err; }
+      }
+      await new Promise(resolve => setTimeout(resolve, Math.min(interval, 1000)));
+    }
   }
   try {
     while (alive()) {
