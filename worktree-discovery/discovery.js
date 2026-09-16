@@ -29,10 +29,10 @@ function save(file, state) {
   fs.renameSync(`${file}.tmp`, file);
 }
 
-function untouched(entry, snapshot, kept, removed = false) {
+function untouched(entry, snapshot, kept) {
   const workspace = snapshot.workspaces.find(w => w.workspace_id === entry.workspaceId);
   const panes = snapshot.panes.filter(p => p.workspace_id === entry.workspaceId);
-  return !!workspace && !kept && (removed || workspace.label === entry.label)
+  return !!workspace && !kept && workspace.label === entry.label
     && workspace.tab_count === 1 && panes.length === 1
     && panes[0].pane_id === entry.paneId && panes[0].terminal_id === entry.terminalId
     && !panes[0].agent && !panes[0].agent_session
@@ -90,8 +90,7 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
     try {
     const inventory = inventories.find(item => key(item.source.repo_key) === entry.repo);
     const worktree = inventory?.worktrees.find(w => key(w.path) === checkout && !w.is_prunable);
-    const removed = !!inventory && !worktree;
-    if (!untouched(entry, snapshot, io.kept(entry.workspaceId), removed)) {
+    if (!untouched(entry, snapshot, io.kept(entry.workspaceId))) {
       // The opening snapshot predates spaces created above.
       if (snapshot.workspaces.some(w => w.workspace_id === entry.workspaceId) || io.exists(entry.workspaceId) === false) {
         delete state.owned[checkout];
@@ -105,7 +104,7 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
 
     // Recheck immediately before closing; workspace close also terminates terminals.
     const latest = io.snapshot();
-    if (!untouched(entry, latest, io.kept(entry.workspaceId), removed)) {
+    if (!untouched(entry, latest, io.kept(entry.workspaceId))) {
       delete state.owned[checkout];
       continue;
     }
@@ -148,7 +147,12 @@ function tick() {
   }
   const io = {
     save: state => save(file, state),
-    open: (cwd, checkout) => api(["worktree", "open", "--cwd", cwd, "--path", checkout, "--no-focus"]),
+    open: (cwd, checkout) => {
+      const opened = api(["worktree", "open", "--cwd", cwd, "--path", checkout, "--no-focus"]);
+      // Pin only a space we created: --label on worktree open can rename someone else's space in a race.
+      if (!opened.already_open) api(["workspace", "rename", opened.workspace.workspace_id, opened.workspace.label]);
+      return opened;
+    },
     close: workspaceId => api(["workspace", "close", workspaceId]),
     kept: workspaceId => fs.existsSync(keepFile(workspaceId)),
     exists: workspaceId => api(["api", "snapshot"]).snapshot.workspaces.some(w => w.workspace_id === workspaceId),

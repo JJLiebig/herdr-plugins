@@ -101,11 +101,22 @@ test("visiting a space preserves ownership and removed worktrees retire after fo
   const f = fixture(); const workspace = f.start();
   workspace.focused = true; f.step();
   assert.ok(f.state.owned[key("/worktrees/feature")]);
-  f.inventory.worktrees = []; workspace.label = ".codex"; f.step();
+  f.inventory.worktrees = []; f.step();
   assert.deepEqual(f.closed, []);
   assert.ok(f.state.owned[key("/worktrees/feature")]);
   workspace.focused = false; f.step();
   assert.deepEqual(f.closed, ["w1"]);
+});
+
+test("a user rename stays protected when checkout removal precedes the next scan", () => {
+  for (const focused of [false, true]) {
+    const f = fixture(); const workspace = f.start();
+    workspace.focused = focused; f.inventory.worktrees = [];
+    workspace.label = "my notes"; f.step();
+    workspace.focused = false; f.step();
+    assert.deepEqual(f.closed, []);
+    assert.deepEqual(f.state.owned, {});
+  }
 });
 
 test("removed checkout closes only an untouched idle space; last-minute focus is preserved", () => {

@@ -32,8 +32,9 @@ that PR and branch. A reopened/replaced PR or failed/stale lookup resets the
 wait. Without GitHub Tools, discovery still works; PR-based retirement does not.
 
 Removing a worktree retires its auto-added space on the next scan (normally within
-ten seconds), without waiting for a PR or the 30-minute grace period. Automatic
-label changes after removal do not prevent cleanup. A focused space or busy shell
+ten seconds), without waiting for a PR or the 30-minute grace period. Discovery
+pins each new space's initial name so checkout removal cannot automatically rename
+it; an explicit user rename still keeps the space. A focused space or busy shell
 waits until you leave it or the command finishes, then cleanup retries.
 Retirement continues for
 already managed spaces after the parent agent exits. Worktree directories,
