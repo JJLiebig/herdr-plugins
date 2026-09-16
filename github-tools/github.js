@@ -5,7 +5,7 @@ const { spawnSync } = require("node:child_process");
 
 const herdr = process.env.HERDR_BIN_PATH || "herdr";
 const gh = process.env.GH_BIN_PATH || "gh";
-const metadataSource = "plugin:jjliebig.github";
+const metadataSource = "plugin:jjliebig.github-tools";
 
 function run(command, args, options = {}) {
   return spawnSync(command, args, {

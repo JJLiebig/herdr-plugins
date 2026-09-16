@@ -1,4 +1,4 @@
-# GitHub
+# GitHub Tools
 
 Shows the pull request associated with each Git workspace and provides actions
 to refresh it or open the current repository or pull request in a browser.
@@ -6,7 +6,7 @@ to refresh it or open the current repository or pull request in a browser.
 ## Install
 
 ```powershell
-herdr plugin install JJLiebig/herdr-plugins/github
+herdr plugin install JJLiebig/herdr-plugins/github-tools
 ```
 
 Requires Node.js, GitHub CLI authentication, and Herdr 0.8.2 or newer.
@@ -20,7 +20,10 @@ rows = [["state_icon", "workspace"], ["branch", "git_status", "$github_pr"]]
 
 Then run `herdr server reload-config`. The plugin refreshes on startup and when
 a workspace is created, updated, or focused. Use the
-`jjliebig.github.refresh` action for an explicit refresh.
+`jjliebig.github-tools.refresh` action for an explicit refresh.
+
+If you installed the former `jjliebig.github` plugin, uninstall it before
+installing GitHub Tools: `herdr plugin uninstall jjliebig.github`.
 
 Herdr does not yet let plugins make sidebar metadata clickable or schedule a
 periodic refresh. The `open-pull-request` and `open-repository` actions provide

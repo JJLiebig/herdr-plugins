@@ -1,5 +1,5 @@
-id = "jjliebig.github"
-name = "GitHub"
+id = "jjliebig.github-tools"
+name = "GitHub Tools"
 version = "0.1.0"
 min_herdr_version = "0.8.2"
 description = "Show and open the pull request for each Herdr workspace."
