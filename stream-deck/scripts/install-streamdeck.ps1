@@ -27,7 +27,10 @@ try {
     Remove-Item -Force $package, $zip -ErrorAction SilentlyContinue
     Compress-Archive -Path $stagedPlugin -DestinationPath $zip -CompressionLevel Optimal
     Move-Item $zip $package
-    Start-Process $package
+    # Launch a copy so Herdr can move its temporary plugin checkout into place.
+    $installer = Join-Path ([IO.Path]::GetTempPath()) "herdr-streamdeck-$([guid]::NewGuid()).streamDeckPlugin"
+    Copy-Item -LiteralPath $package -Destination $installer
+    Start-Process $installer
     Write-Host "Opened the Stream Deck installer. Accept its install prompt to finish."
 } finally {
     Remove-Item -LiteralPath $staging -Recurse -Force
