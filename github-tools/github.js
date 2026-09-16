@@ -25,8 +25,8 @@ function context() {
 }
 
 function formatPullRequest(pr) {
-  const state = pr.mergedAt ? "merged" : pr.isDraft ? "draft" : String(pr.state).toLowerCase();
-  return `PR #${pr.number} · ${state}`;
+  const symbol = pr.mergedAt ? "◆" : pr.isDraft ? "◇" : pr.state === "CLOSED" ? "×" : "○";
+  return `${symbol} #${pr.number}`;
 }
 
 function isMissingPullRequest(message) {

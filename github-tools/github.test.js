@@ -4,9 +4,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { formatPullRequest, isMissingPullRequest, snapshotTargets } = require("./github.js");
 
-test("formats GitHub pull-request states", () => {
-  assert.equal(formatPullRequest({ number: 7, state: "OPEN", isDraft: true, mergedAt: null }), "PR #7 · draft");
-  assert.equal(formatPullRequest({ number: 8, state: "CLOSED", isDraft: false, mergedAt: "2026-01-01" }), "PR #8 · merged");
+test("shows the portable symbol for each pull-request state", () => {
+  assert.equal(formatPullRequest({ number: 6, state: "OPEN", isDraft: false, mergedAt: null }), "○ #6");
+  assert.equal(formatPullRequest({ number: 7, state: "OPEN", isDraft: true, mergedAt: null }), "◇ #7");
+  assert.equal(formatPullRequest({ number: 8, state: "CLOSED", isDraft: false, mergedAt: null }), "× #8");
+  assert.equal(formatPullRequest({ number: 9, state: "CLOSED", isDraft: false, mergedAt: "2026-01-01" }), "◆ #9");
 });
 
 test("distinguishes no pull request from provider failures", () => {

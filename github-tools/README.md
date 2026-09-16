@@ -5,7 +5,7 @@ to refresh it or open the current repository or pull request in a browser.
 
 ## Visual direction
 
-These screenshots came from the earlier [Herdr PR #4089](https://github.com/herdrdev/herdr/pull/4089). They show a proposed native sidebar treatment, not the exact output of this plugin. GitHub Tools reports text through the `$github_pr` sidebar token; it does not provide the pictured symbol or Nerd Font icon modes.
+These screenshots came from the earlier [Herdr PR #4089](https://github.com/herdrdev/herdr/pull/4089). They show a proposed native sidebar treatment, not the exact output of this plugin. GitHub Tools reports the portable symbols (`○` open, `◇` draft, `×` closed, `◆` merged) and number through the `$github_pr` sidebar token; it does not provide the pictured native placement, colors, or Nerd Font icon mode.
 
 | Before | Symbols | Nerd Font |
 | --- | --- | --- |
