@@ -30,7 +30,7 @@ try {
     # Launch a copy so Herdr can move its temporary plugin checkout into place.
     $installer = Join-Path ([IO.Path]::GetTempPath()) "herdr-streamdeck-$([guid]::NewGuid()).streamDeckPlugin"
     Copy-Item -LiteralPath $package -Destination $installer
-    Start-Process $installer
+    Start-Process $installer -WorkingDirectory ([IO.Path]::GetTempPath())
     Write-Host "Opened the Stream Deck installer. Accept its install prompt to finish."
 } finally {
     Remove-Item -LiteralPath $staging -Recurse -Force
