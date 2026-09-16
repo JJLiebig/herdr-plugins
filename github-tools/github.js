@@ -6,6 +6,10 @@ const { spawnSync } = require("node:child_process");
 const herdr = process.env.HERDR_BIN_PATH || "herdr";
 const gh = process.env.GH_BIN_PATH || "gh";
 const metadataSource = "plugin:jjliebig.github-tools";
+const icons = {
+  symbols: { open: "○", draft: "◇", closed: "×", merged: "◆" },
+  nerd_font: { open: "", draft: "", closed: "", merged: "" },
+};
 
 function run(command, args, options = {}) {
   return spawnSync(command, args, {
@@ -24,9 +28,9 @@ function context() {
   }
 }
 
-function formatPullRequest(pr) {
-  const symbol = pr.mergedAt ? "◆" : pr.isDraft ? "◇" : pr.state === "CLOSED" ? "×" : "○";
-  return `${symbol} #${pr.number}`;
+function formatPullRequest(pr, style = "symbols") {
+  const state = pr.mergedAt ? "merged" : pr.isDraft ? "draft" : pr.state === "CLOSED" ? "closed" : "open";
+  return `${icons[style][state]} #${pr.number}`;
 }
 
 function isMissingPullRequest(message) {
@@ -36,9 +40,11 @@ function isMissingPullRequest(message) {
 function report(workspaceId, pr) {
   const args = ["workspace", "report-metadata", workspaceId, "--source", metadataSource];
   if (pr) {
-    args.push("--token", `github_pr=${formatPullRequest(pr)}`, "--token", `github_pr_url=${pr.url}`);
+    args.push("--token", `github_pr=${formatPullRequest(pr)}`,
+      "--token", `github_pr_nerd=${formatPullRequest(pr, "nerd_font")}`,
+      "--token", `github_pr_url=${pr.url}`);
   } else {
-    args.push("--clear-token", "github_pr", "--clear-token", "github_pr_url");
+    args.push("--clear-token", "github_pr", "--clear-token", "github_pr_nerd", "--clear-token", "github_pr_url");
   }
   const result = run(herdr, args);
   if (result.status !== 0) throw new Error(result.stderr.trim() || "failed to report workspace metadata");

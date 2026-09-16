@@ -11,6 +11,13 @@ test("shows the portable symbol for each pull-request state", () => {
   assert.equal(formatPullRequest({ number: 9, state: "CLOSED", isDraft: false, mergedAt: "2026-01-01" }), "◆ #9");
 });
 
+test("shows the Nerd Font glyph for each pull-request state", () => {
+  assert.equal(formatPullRequest({ number: 6, state: "OPEN", isDraft: false, mergedAt: null }, "nerd_font"), " #6");
+  assert.equal(formatPullRequest({ number: 7, state: "OPEN", isDraft: true, mergedAt: null }, "nerd_font"), " #7");
+  assert.equal(formatPullRequest({ number: 8, state: "CLOSED", isDraft: false, mergedAt: null }, "nerd_font"), " #8");
+  assert.equal(formatPullRequest({ number: 9, state: "CLOSED", isDraft: false, mergedAt: "2026-01-01" }, "nerd_font"), " #9");
+});
+
 test("distinguishes no pull request from provider failures", () => {
   assert.equal(isMissingPullRequest('no pull requests found for branch "main"'), true);
   assert.equal(isMissingPullRequest("authentication failed: invalid token"), false);

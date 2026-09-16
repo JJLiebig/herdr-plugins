@@ -22,9 +22,14 @@ rows = [["state_icon", "workspace"], ["branch", "git_status", "$github_pr"]]
 
 ## Nerd Fonts
 
-Nerd Font icons are not supported yet; the plugin uses symbols that work with
-any font. If you want a Nerd Font for your terminal, [download one](https://www.nerdfonts.com/font-downloads),
-install it, and select it in your terminal settings.
+To use Nerd Font PR glyphs, install a font such as
+[JetBrainsMono Nerd Font Mono](https://www.nerdfonts.com/font-downloads) and
+select it in the terminal displaying Herdr. In the sidebar `rows` setting
+above, replace `$github_pr` with `$github_pr_nerd`, then run
+`herdr server reload-config`.
+
+The default `$github_pr` uses portable symbols. Nerd Font glyphs will not
+display correctly unless your terminal uses a font that contains them.
 
 ## Keybinds
 
