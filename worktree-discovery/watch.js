@@ -52,6 +52,7 @@ async function watch(tick, interval = 60000, request = api, alive = parentAlive,
         client.on("data", chunk => { data += chunk; });
         client.once("end", () => resolve(data));
         client.once("error", err => {
+          if (err.code === "ECONNRESET") { resolve(""); return; }
           if (["ECONNREFUSED", "ENOENT"].includes(err.code)) resolve(null);
           else reject(err);
         });
