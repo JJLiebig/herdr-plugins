@@ -26,6 +26,12 @@ title = "Open GitHub repository"
 contexts = ["workspace"]
 command = ["node", "github.js", "open-repository"]
 
+[[actions]]
+id = "open-current"
+title = "Open GitHub pull request or repository"
+contexts = ["workspace"]
+command = ["node", "github.js", "open-current"]
+
 [[events]]
 on = "workspace.created"
 command = ["node", "github.js", "refresh-current"]

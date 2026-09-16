@@ -102,7 +102,8 @@ function currentTarget() {
 function open(kind) {
   const { cwd } = currentTarget();
   if (!cwd) throw new Error("workspace path is unavailable");
-  const args = kind === "pull-request" ? ["pr", "view", "--web"] : ["repo", "view", "--web"];
+  const hasPullRequest = kind === "current" ? Boolean(pullRequest(cwd)) : kind === "pull-request";
+  const args = hasPullRequest ? ["pr", "view", "--web"] : ["repo", "view", "--web"];
   const result = run(gh, args, { cwd, inherit: true });
   if (result.status !== 0) process.exitCode = result.status || 1;
 }
@@ -115,6 +116,7 @@ function main(mode = process.argv[2]) {
   }
   if (mode === "open-pull-request") return open("pull-request");
   if (mode === "open-repository") return open("repository");
+  if (mode === "open-current") return open("current");
   throw new Error(`unknown command: ${mode || "<missing>"}`);
 }
 

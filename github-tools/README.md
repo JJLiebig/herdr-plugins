@@ -30,9 +30,21 @@ Then run `herdr server reload-config`. The plugin refreshes on startup and when
 a workspace is created, updated, or focused. Use the
 `jjliebig.github-tools.refresh` action for an explicit refresh.
 
+To open the current pull request, or the repository if there is no PR, add:
+
+```toml
+[[keys.command]]
+key = "alt+shift+g"
+type = "plugin_action"
+command = "jjliebig.github-tools.open-current"
+description = "open GitHub PR or repository"
+```
+
+Then run `herdr server reload-config`.
+
 If you installed the former `jjliebig.github` plugin, uninstall it before
 installing GitHub Tools: `herdr plugin uninstall jjliebig.github`.
 
 Herdr does not yet let plugins make sidebar metadata clickable or schedule a
-periodic refresh. The `open-pull-request` and `open-repository` actions provide
-the current fallback.
+periodic refresh. The `open-current`, `open-pull-request`, and `open-repository`
+actions provide the current fallback.
