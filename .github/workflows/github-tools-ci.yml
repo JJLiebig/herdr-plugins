@@ -2,7 +2,7 @@ name: GitHub Tools CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - "github-tools/**"
       - ".github/workflows/github-tools-ci.yml"

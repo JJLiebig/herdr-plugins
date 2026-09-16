@@ -2,7 +2,7 @@ name: Worktree Discovery CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths: ["worktree-discovery/**", ".github/workflows/worktree-discovery-ci.yml"]
   pull_request:
     paths: ["worktree-discovery/**", ".github/workflows/worktree-discovery-ci.yml"]

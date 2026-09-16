@@ -2,7 +2,7 @@ name: Simple Dispatch CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - "simple-dispatch/**"
       - ".github/workflows/simple-dispatch-ci.yml"

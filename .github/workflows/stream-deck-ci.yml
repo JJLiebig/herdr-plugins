@@ -2,7 +2,7 @@ name: Stream Deck CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - "stream-deck/**"
       - ".github/workflows/stream-deck-ci.yml"
