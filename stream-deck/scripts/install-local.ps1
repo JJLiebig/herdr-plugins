@@ -9,7 +9,7 @@ $herdr = if ($env:HERDR_PATH) {
     }
     $candidate.FullName
 } else {
-    (Get-Command herdr -CommandType Application -ErrorAction Stop).Source
+    (Get-Command herdr -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 }
 Push-Location $root
 try {

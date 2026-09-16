@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path $PSScriptRoot -Parent
 $source = Join-Path $root "dev.herdr.streamdeck.sdPlugin"
-$herdr = (Get-Command herdr -CommandType Application -ErrorAction Stop).Source
+$herdr = (Get-Command herdr -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $output = Join-Path $root "dist"
 $package = Join-Path $output "herdr-streamdeck.streamDeckPlugin"
 $zip = "$package.zip"
