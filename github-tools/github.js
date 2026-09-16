@@ -102,8 +102,15 @@ function currentTarget() {
 function open(kind) {
   const { cwd } = currentTarget();
   if (!cwd) throw new Error("workspace path is unavailable");
-  const hasPullRequest = kind === "current" ? Boolean(pullRequest(cwd)) : kind === "pull-request";
-  const args = hasPullRequest ? ["pr", "view", "--web"] : ["repo", "view", "--web"];
+  if (kind === "current") {
+    const pr = run(gh, ["pr", "view", "--web"], { cwd });
+    if (pr.error) throw pr.error;
+    if (pr.status === 0) return;
+    if (!isMissingPullRequest(pr.stderr || "")) {
+      throw new Error(pr.stderr.trim() || "GitHub pull-request lookup failed");
+    }
+  }
+  const args = kind === "pull-request" ? ["pr", "view", "--web"] : ["browse"];
   const result = run(gh, args, { cwd, inherit: true });
   if (result.status !== 0) process.exitCode = result.status || 1;
 }
