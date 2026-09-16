@@ -1,0 +1,39 @@
+id = "jjliebig.github"
+name = "GitHub"
+version = "0.1.0"
+min_herdr_version = "0.8.2"
+description = "Show and open the pull request for each Herdr workspace."
+platforms = ["linux", "macos", "windows"]
+
+[[startup]]
+command = ["node", "github.js", "refresh-all"]
+
+[[actions]]
+id = "refresh"
+title = "Refresh GitHub pull request"
+contexts = ["workspace"]
+command = ["node", "github.js", "refresh-current"]
+
+[[actions]]
+id = "open-pull-request"
+title = "Open GitHub pull request"
+contexts = ["workspace"]
+command = ["node", "github.js", "open-pull-request"]
+
+[[actions]]
+id = "open-repository"
+title = "Open GitHub repository"
+contexts = ["workspace"]
+command = ["node", "github.js", "open-repository"]
+
+[[events]]
+on = "workspace.created"
+command = ["node", "github.js", "refresh-current"]
+
+[[events]]
+on = "workspace.updated"
+command = ["node", "github.js", "refresh-current"]
+
+[[events]]
+on = "workspace.focused"
+command = ["node", "github.js", "refresh-current"]

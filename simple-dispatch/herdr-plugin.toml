@@ -1,5 +1,5 @@
-id = "jjliebig.codex-workflows"
-name = "Codex Workflows"
+id = "jjliebig.simple-dispatch"
+name = "Simple Dispatch"
 version = "0.1.0"
 min_herdr_version = "0.8.2"
 description = "Start feature work and issue fixes, or shepherd existing pull requests to a mergeable state, in isolated workspaces for Codex, opencode, and other Herdr agents."
