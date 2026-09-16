@@ -68,7 +68,7 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
         if (previous.includes(checkout) || worktree.open_workspace_id) continue;
         // Save successful opens one at a time; a later failed open remains retryable.
         let opened;
-        try { opened = io.open(inventory.source.source_checkout_path, worktree.path); }
+        try { opened = io.open(inventory.source.source_checkout_path, worktree.path, worktree.branch); }
         catch (error) { failed.add(checkout); console.error(`${worktree.path}: ${error.message}`); continue; }
         if (!opened.already_open) {
           state.owned[checkout] = {
@@ -99,6 +99,13 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
     }
     if (!inventory) continue; // Git lookup failed: leave the space alone.
     const workspace = snapshot.workspaces.find(w => w.workspace_id === entry.workspaceId);
+    if (worktree?.branch && worktree.branch !== entry.label) {
+      const latest = io.snapshot();
+      if (!untouched(entry, latest, io.kept(entry.workspaceId))) continue;
+      io.rename(entry.workspaceId, worktree.branch);
+      entry.label = workspace.label = worktree.branch;
+      io.save(state);
+    }
     const expired = terminalPR(entry, workspace, worktree?.branch, now);
     if (workspace.focused || (worktree && !expired)) continue;
 
@@ -147,12 +154,17 @@ function tick() {
   }
   const io = {
     save: state => save(file, state),
-    open: (cwd, checkout) => {
+    open: (cwd, checkout, branch) => {
       const opened = api(["worktree", "open", "--cwd", cwd, "--path", checkout, "--no-focus"]);
       // Pin only a space we created: --label on worktree open can rename someone else's space in a race.
-      if (!opened.already_open) api(["workspace", "rename", opened.workspace.workspace_id, opened.workspace.label]);
+      if (!opened.already_open) {
+        const label = branch || opened.workspace.label;
+        api(["workspace", "rename", opened.workspace.workspace_id, label]);
+        opened.workspace.label = label;
+      }
       return opened;
     },
+    rename: (workspaceId, label) => api(["workspace", "rename", workspaceId, label]),
     close: workspaceId => api(["workspace", "close", workspaceId]),
     kept: workspaceId => fs.existsSync(keepFile(workspaceId)),
     exists: workspaceId => api(["api", "snapshot"]).snapshot.workspaces.some(w => w.workspace_id === workspaceId),

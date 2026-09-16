@@ -15,8 +15,9 @@ function fixture() {
   const io = {
     save: () => {}, kept: id => kept.has(id), exists: id => snapshot.workspaces.some(w => w.workspace_id === id),
     snapshot: () => snapshot, branch: () => "feature", idle: () => true,
-    open: (cwd, checkout) => {
-      const workspace = { workspace_id: `w${nextWorkspace++}`, label: "feature", tab_count: 1,
+    rename: (id, label) => { snapshot.workspaces.find(w => w.workspace_id === id).label = label; },
+    open: (cwd, checkout, branch) => {
+      const workspace = { workspace_id: `w${nextWorkspace++}`, label: branch || "feature", tab_count: 1,
         focused: false, worktree: { checkout_path: checkout }, tokens: {} };
       const root_pane = { workspace_id: workspace.workspace_id, pane_id: `${workspace.workspace_id}:p1`, terminal_id: `t${snapshot.panes.length}` };
       snapshot.workspaces.push(workspace); snapshot.panes.push(root_pane);
@@ -43,6 +44,18 @@ test("baseline is quiet; new worktrees open once and manual dismissal survives r
   reconcile(persisted, f.snapshot, [f.inventory], f.io);
   assert.equal(f.snapshot.workspaces.length, 0);
   assert.deepEqual(persisted.owned, {});
+});
+
+test("managed labels follow branches, retain detached names, and preserve user renames", () => {
+  const f = fixture(); const workspace = f.start();
+  f.inventory.worktrees[0].branch = "beta/new-branch"; f.step();
+  assert.equal(workspace.label, "beta/new-branch");
+  assert.equal(f.state.owned[key("/worktrees/feature")].label, "beta/new-branch");
+  f.inventory.worktrees[0].branch = null; f.step();
+  assert.equal(workspace.label, "beta/new-branch");
+  workspace.label = "my notes"; f.inventory.worktrees[0].branch = "another"; f.step();
+  assert.equal(workspace.label, "my notes");
+  assert.deepEqual(f.state.owned, {});
 });
 
 test("spaces opened by someone else, including an open race, are never owned", () => {
