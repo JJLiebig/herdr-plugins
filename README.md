@@ -12,6 +12,28 @@ Small, independently installable plugins for [Herdr](https://github.com/herdrdev
 Install only the plugins you want. Each plugin owns its manifest, dependencies,
 configuration, state, and tests.
 
+## Worktree Discovery
+
+New worktrees appear automatically while their repository has an agent session,
+without moving your focus. Works with any agent Herdr recognizes, including
+Codex and Symphony++. Existing worktrees are left alone on the first scan.
+
+```sh
+herdr plugin install JJLiebig/herdr-plugins/worktree-discovery
+herdr plugin action invoke jjliebig.worktree-discovery.watch
+```
+
+Requires Herdr 0.9.0+ and Node.js 18+. The action starts discovery in an existing
+session; future Herdr sessions start it automatically.
+
+Pair it with **GitHub Tools** for PR status and automatic retirement: untouched
+spaces close 30 minutes after their PR is observed as merged or closed. Only
+spaces opened by discovery are eligible. Focusing or customizing one keeps it
+yours. Worktree files and branches are never deleted.
+
+See the [Worktree Discovery guide](worktree-discovery/) for ownership rules and
+the [GitHub Tools setup](github-tools/) for sidebar configuration.
+
 ## GitHub Tools visual direction
 
 These screenshots are from the earlier [Herdr PR #4089](https://github.com/herdrdev/herdr/pull/4089) design exploration. GitHub Tools currently shows pull-request status through the `$github_pr` sidebar token; the symbol and Nerd Font icon modes pictured below are **not** part of the plugin.
