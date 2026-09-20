@@ -3,9 +3,9 @@
 A best-effort cache countdown in Herdr's Agents sidebar:
 
 ```text
-cache [########..] ~24m
-cache [##........] ~6m
-cache [..........] window elapsed
+cache ~24m ▰▰▰▱
+cache  ~6m ▰▱▱▱
+cache   0m ▱▱▱▱
 ```
 
 Requires Herdr 0.9.0+ and Node.js 18+. No dependencies or provider requests.
@@ -94,7 +94,8 @@ to idle: this estimates lifecycle completion, not successful provider caching.
 
 The provider's clock follows requests, not the final message. Long responses,
 compaction, prefix changes, routing, or mixed cache lifetimes can make the
-estimate optimistic. `window elapsed` does not prove eviction. No keepalive
+estimate optimistic. `0m` (or `window elapsed` in the compact display) does not
+prove eviction. No keepalive
 requests are sent. Display metadata expires within 30 seconds if the watcher
 stops, the plugin is disabled, or the pane stops being an agent.
 
