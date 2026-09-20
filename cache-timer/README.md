@@ -2,11 +2,7 @@
 
 A best-effort cache countdown in Herdr's Agents sidebar:
 
-```text
-cache ~24m ▰▰▰▱
-cache  ~6m ▰▱▱▱
-cache   0m ▱▱▱▱
-```
+![Cache Timer showing remaining minutes and slim progress bars in the Agents sidebar](assets/screenshot_cache.png)
 
 Requires Herdr 0.9.0+ and Node.js 18+. No dependencies or provider requests.
 

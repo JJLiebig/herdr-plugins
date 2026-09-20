@@ -13,6 +13,12 @@ Small, independently installable plugins for [Herdr](https://github.com/herdrdev
 Install only the plugins you want. Each plugin owns its manifest, dependencies,
 configuration, state, and tests.
 
+## Cache Timer
+
+Estimated cache time remaining, with slim progress bars. [Setup and options](cache-timer/).
+
+![Cache Timer showing remaining minutes and slim progress bars in the Agents sidebar](cache-timer/assets/screenshot_cache.png)
+
 ## Worktree Discovery
 
 New worktrees appear automatically while their repository has an agent session,
