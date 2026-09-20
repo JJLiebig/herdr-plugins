@@ -1,0 +1,6 @@
+{
+  "name": "herdr-plugin-cache-timer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "check": "node --check cache.js && node --check watch.js && node --test" }
+}
