@@ -19,6 +19,9 @@ Estimated cache time remaining, with slim progress bars. [Setup and options](cac
 
 ![Cache Timer showing remaining minutes and slim progress bars in the Agents sidebar](cache-timer/assets/screenshot_cache.png)
 
+Design scaffold: [Richer Sidebar](richer-sidebar/) explores categories, sidebar
+layout, and clickable decorations. It has no runtime behavior yet.
+
 ## Worktree Discovery
 
 New worktrees appear automatically while their repository has an agent session,

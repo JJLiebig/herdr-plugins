@@ -1,0 +1,7 @@
+id = "jjliebig.richer-sidebar"
+name = "Richer Sidebar"
+version = "0.1.0"
+# This floor covers the inert manifest only, not the proposed sidebar features.
+min_herdr_version = "0.7.0"
+description = "Design scaffold for categories and richer sidebar presentation. No runtime behavior yet."
+platforms = ["linux", "macos", "windows"]
