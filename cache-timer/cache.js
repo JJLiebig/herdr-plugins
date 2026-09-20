@@ -54,7 +54,7 @@ function advance(previous, agent, now) {
 }
 
 function display(state, ttl, now) {
-  if (state.status === "working") return { cache: "cache working", cache_short: "cache working" };
+  if (state.status === "working") return { cache: null, cache_short: null };
   if (state.status === "unknown" || ttl === null || state.completedAt === null) {
     return { cache: "cache ?", cache_short: "cache ?" };
   }

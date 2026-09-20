@@ -17,7 +17,7 @@ test("completion ages without focus resets, including a short turn between polls
   let state = advance(null, agent(), 0);
   assert.equal(display(state, 1800000, 0).cache, "cache ?");
   state = advance(state, agent("working", 2), 1000);
-  assert.equal(display(state, 1800000, 1000).cache, "cache working");
+  assert.deepEqual(display(state, 1800000, 1000), { cache: null, cache_short: null });
   state = advance(state, agent("done", 3), 2000);
   assert.equal(display(state, 1800000, 2000).cache, "cache ~30m ▰▰▰▰");
   state = advance(state, agent("idle", 3, { title: "renamed", focused: true }), 62000);
@@ -79,6 +79,7 @@ test("ticker publishes expiring metadata, retries failures, and retains time acr
   };
   const tick = ticker(request, () => ({ codex: 1800000 }), () => now);
   await tick();
+  assert.deepEqual(writes[0].tokens, { cache: null, cache_short: null });
   now = 5000; current = agent("done", 2); fail = true;
   await assert.rejects(tick, /disconnected/);
   now = 10000; await tick();

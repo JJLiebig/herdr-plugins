@@ -80,7 +80,7 @@ Why these defaults (checked September 20, 2026):
 The watcher checks Herdr's lifecycle sequence every 20 seconds. A new settled
 state starts the estimate, including short turns completed between checks.
 Focusing a completed pane or refreshing its title does not restart it.
-`cache working` replaces the countdown while the agent works; time still passes
+The cache display is hidden while the agent works; time still passes
 while blocked. The bar measures the assumed time window, not cached tokens.
 
 Initially, and after the watcher restarts or Herdr reports a different session,
