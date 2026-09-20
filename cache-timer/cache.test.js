@@ -19,16 +19,16 @@ test("completion ages without focus resets, including a short turn between polls
   state = advance(state, agent("working", 2), 1000);
   assert.equal(display(state, 1800000, 1000).cache, "cache working");
   state = advance(state, agent("done", 3), 2000);
-  assert.equal(display(state, 1800000, 2000).cache, "cache [##########] ~30m");
+  assert.equal(display(state, 1800000, 2000).cache, "cache ~30m ▰▰▰▰");
   state = advance(state, agent("idle", 3, { title: "renamed", focused: true }), 62000);
   assert.equal(state.completedAt, 2000);
-  assert.equal(display(state, 1800000, 362000).cache, "cache [########..] ~24m");
+  assert.equal(display(state, 1800000, 362000).cache, "cache ~24m ▰▰▰▱");
   state = advance(state, agent("idle", 5), 400000);
   assert.equal(state.completedAt, 400000);
   state = advance(state, agent("blocked", 6), 500000);
   assert.equal(display(state, 300000, 699999).cache_short, "cache ~1m");
-  assert.equal(display(state, 300000, 700000).cache, "cache [..........] window elapsed");
-  assert.equal(display(state, 300000, 1).cache, "cache [##########] ~5m");
+  assert.equal(display(state, 300000, 700000).cache, "cache   0m ▱▱▱▱");
+  assert.equal(display(state, 300000, 1).cache, "cache  ~5m ▰▰▰▰");
 });
 
 test("session replacement and sequence rollback discard old estimates; moving preserves them", () => {
@@ -82,7 +82,7 @@ test("ticker publishes expiring metadata, retries failures, and retains time acr
   now = 5000; current = agent("done", 2); fail = true;
   assert.throws(tick, /disconnected/);
   now = 10000; tick();
-  assert.ok(writes.at(-1).includes("cache=cache [##########] ~30m"));
+  assert.ok(writes.at(-1).includes("cache=cache ~30m ▰▰▰▰"));
   now = 20000; tick();
   assert.equal(writes.length, 2);
   now = 25000; tick();

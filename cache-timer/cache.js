@@ -59,9 +59,10 @@ function display(state, ttl, now) {
     return { cache: "cache ?", cache_short: "cache ?" };
   }
   const remaining = Math.max(0, ttl - Math.max(0, now - state.completedAt));
-  const filled = Math.ceil(remaining / ttl * 10);
+  const filled = remaining ? Math.max(1, Math.round(remaining / ttl * 4)) : 0;
   const label = remaining ? `~${Math.ceil(remaining / 60000)}m` : "window elapsed";
-  return { cache: `cache [${"#".repeat(filled)}${".".repeat(10 - filled)}] ${label}`, cache_short: `cache ${label}` };
+  const minutes = (remaining ? label : "0m").padStart(4);
+  return { cache: `cache ${minutes} ${"▰".repeat(filled)}${"▱".repeat(4 - filled)}`, cache_short: `cache ${label}` };
 }
 
 function report(paneId, tokens, request = api, ttl = 30000, source = "display") {
