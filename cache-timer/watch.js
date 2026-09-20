@@ -17,7 +17,7 @@ function api(args) {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(result.stderr.trim() || "Herdr request failed");
-  const response = JSON.parse(result.stdout);
+  const response = result.stdout.trim() ? JSON.parse(result.stdout) : {};
   if (response.error) throw new Error(response.error.message);
   return response.result;
 }
