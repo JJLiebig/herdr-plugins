@@ -48,7 +48,7 @@ test("session replacement and sequence rollback discard old estimates; moving pr
 test("configuration and session overrides select estimates without guessing unknown providers", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "cache-timer-test-"));
   try {
-    assert.deepEqual(await config(root), { codex: 1800000, claude: 3600000 });
+    assert.deepEqual(await config(root), { codex: 3600000, claude: 3600000 });
     fs.writeFileSync(path.join(root, "config.json"), JSON.stringify({ agents: { claude: "1h", codex: null, custom: "10m" }, future: true }));
     const values = await config(root);
     assert.equal(lifetime(agent(), values), null);

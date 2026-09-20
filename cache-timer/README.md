@@ -35,7 +35,7 @@ bottom border; that requires a separate Herdr UI extension.
 
 ## Choose the estimate
 
-Defaults are **Codex: 30 minutes**, **Claude: 1 hour**. These are assumptions,
+Defaults are **Codex: 60 minutes**, **Claude: 1 hour**. These are estimates,
 not measured retention. Unknown agents show `cache ?`.
 
 From an agent pane, use the plugin actions to select 5 minutes, 30 minutes,
@@ -50,7 +50,7 @@ To change defaults, create `config.json` in the directory printed by
 ```json
 {
   "agents": {
-    "codex": "30m",
+    "codex": "1h",
     "claude": "1h"
   }
 }
@@ -64,10 +64,8 @@ estimate yourself. A custom provider using the Codex label inherits its default.
 
 Why these defaults (checked September 20, 2026):
 
-- [OpenAI API](https://developers.openai.com/api/docs/guides/prompt-caching):
-  GPT-5.6 and later document a 30-minute lifetime after the latest cache write or
-  reuse. This is only a working assumption for Codex subscription sessions;
-  neither a subscription-specific lifetime nor a Luna exception is established.
+- Codex: a 60-minute estimate based on a local cache-retention experiment,
+  not a provider guarantee or a measured lifetime for every session.
 - [Claude Code](https://code.claude.com/docs/en/prompt-caching#cache-lifetime):
   included subscription usage normally gives the main conversation one hour;
   API/cloud/usage-credit billing defaults to five minutes. Subagents generally

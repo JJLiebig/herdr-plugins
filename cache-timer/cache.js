@@ -4,7 +4,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { api, hash, watch } = require("./watch.js");
 
-const defaults = { codex: "30m", claude: "1h" };
+const defaults = { codex: "1h", claude: "1h" };
 const settled = status => status === "idle" || status === "done";
 const identity = agent => hash(JSON.stringify([
   agent.terminal_id, agent.agent, agent.agent_session?.source,
