@@ -1,0 +1,39 @@
+id = "jjliebig.cache-timer"
+name = "Cache Timer"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Estimate the cache window remaining after an agent finishes."
+platforms = ["linux", "macos", "windows"]
+
+[[startup]]
+command = ["node", "cache.js", "watch"]
+
+[[actions]]
+id = "watch"
+title = "Start cache timer"
+contexts = ["global"]
+command = ["node", "cache.js", "watch"]
+
+[[actions]]
+id = "five-minutes"
+title = "Estimate a 5-minute cache window"
+contexts = ["pane"]
+command = ["node", "cache.js", "set", "5m"]
+
+[[actions]]
+id = "thirty-minutes"
+title = "Estimate a 30-minute cache window"
+contexts = ["pane"]
+command = ["node", "cache.js", "set", "30m"]
+
+[[actions]]
+id = "one-hour"
+title = "Estimate a 1-hour cache window"
+contexts = ["pane"]
+command = ["node", "cache.js", "set", "1h"]
+
+[[actions]]
+id = "auto"
+title = "Use the default cache estimate"
+contexts = ["pane"]
+command = ["node", "cache.js", "set", "auto"]
