@@ -23,6 +23,10 @@ function config(directory) {
   let value = {};
   try { value = JSON.parse(fs.readFileSync(path.join(directory, "config.json"), "utf8")); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
+  const isObject = item => item !== null && typeof item === "object" && !Array.isArray(item);
+  if (!isObject(value) || (value.agents !== undefined && !isObject(value.agents))) {
+    throw new Error('Cache Timer config must be an object with an optional "agents" object.');
+  }
   const lifetimes = { ...defaults, ...value.agents };
   return Object.fromEntries(Object.entries(lifetimes).map(([agent, ttl]) => [agent.toLowerCase(), duration(ttl)]));
 }

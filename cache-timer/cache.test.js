@@ -60,6 +60,10 @@ test("configuration and session overrides select estimates without guessing unkn
     selected.agent_session.value = "other";
     assert.equal(lifetime(selected, values), null);
     for (const bad of ["0m", "-5m", "5", "NaNm", "999999999999999999h", undefined]) assert.throws(() => duration(bad));
+    for (const bad of [null, [], 3, "1h", { agents: null }, { agents: [] }, { agents: "1h" }]) {
+      fs.writeFileSync(path.join(root, "config.json"), JSON.stringify(bad));
+      assert.throws(() => config(root), /config must be an object/);
+    }
     fs.writeFileSync(path.join(root, "config.json"), "{");
     assert.throws(() => config(root));
   } finally { fs.rmSync(root, { recursive: true }); }
