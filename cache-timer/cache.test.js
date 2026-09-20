@@ -45,12 +45,12 @@ test("session replacement and sequence rollback discard old estimates; moving pr
   assert.equal(advance(unknown, agent("idle", 4), 4000).completedAt, 1000);
 });
 
-test("configuration and session overrides select estimates without guessing unknown providers", () => {
+test("configuration and session overrides select estimates without guessing unknown providers", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "cache-timer-test-"));
   try {
-    assert.deepEqual(config(root), { codex: 1800000, claude: 300000 });
+    assert.deepEqual(await config(root), { codex: 1800000, claude: 3600000 });
     fs.writeFileSync(path.join(root, "config.json"), JSON.stringify({ agents: { claude: "1h", codex: null, custom: "10m" }, future: true }));
-    const values = config(root);
+    const values = await config(root);
     assert.equal(lifetime(agent(), values), null);
     assert.equal(lifetime(agent("idle", 1, { agent: "CLAUDE" }), values), 3600000);
     assert.equal(lifetime(agent("idle", 1, { agent: "unknown" }), values), null);
@@ -62,56 +62,56 @@ test("configuration and session overrides select estimates without guessing unkn
     for (const bad of ["0m", "-5m", "5", "NaNm", "999999999999999999h", undefined]) assert.throws(() => duration(bad));
     for (const bad of [null, [], 3, "1h", { agents: null }, { agents: [] }, { agents: "1h" }]) {
       fs.writeFileSync(path.join(root, "config.json"), JSON.stringify(bad));
-      assert.throws(() => config(root), /config must be an object/);
+      await assert.rejects(config(root), /config must be an object/);
     }
     fs.writeFileSync(path.join(root, "config.json"), "{");
-    assert.throws(() => config(root));
+    await assert.rejects(config(root));
   } finally { fs.rmSync(root, { recursive: true }); }
 });
 
-test("ticker publishes expiring metadata, retries failures, and retains time across pane moves", () => {
+test("ticker publishes expiring metadata, retries failures, and retains time across pane moves", async () => {
   let now = 0, current = agent("working"), fail = false;
   const writes = [];
-  const request = args => {
-    if (args[0] === "agent") return { agents: current ? [current] : [] };
+  const request = async (method, params) => {
+    if (method === "agent.list") return { agents: current ? [current] : [] };
     if (fail) { fail = false; throw new Error("disconnected"); }
-    writes.push(args);
+    writes.push(params);
   };
   const tick = ticker(request, () => ({ codex: 1800000 }), () => now);
-  tick();
+  await tick();
   now = 5000; current = agent("done", 2); fail = true;
-  assert.throws(tick, /disconnected/);
-  now = 10000; tick();
-  assert.ok(writes.at(-1).includes("cache=cache ~30m ▰▰▰▰"));
-  now = 20000; tick();
+  await assert.rejects(tick, /disconnected/);
+  now = 10000; await tick();
+  assert.equal(writes.at(-1).tokens.cache, "cache ~30m ▰▰▰▰");
+  now = 20000; await tick();
   assert.equal(writes.length, 2);
-  now = 25000; tick();
+  now = 70000; await tick();
   assert.equal(writes.length, 3);
-  assert.ok(writes.at(-1).includes("30000"));
-  now = 365000; current.pane_id = "w2:p1"; tick();
-  assert.equal(writes.at(-1)[2], "w2:p1");
-  assert.ok(writes.at(-1).includes("cache_short=cache ~24m"));
-  current = null; tick();
-  current = agent("idle", 2); tick();
-  assert.ok(writes.at(-1).includes("cache=cache ?"));
+  assert.equal(writes.at(-1).ttl_ms, 90000);
+  now = 365000; current.pane_id = "w2:p1"; await tick();
+  assert.equal(writes.at(-1).pane_id, "w2:p1");
+  assert.equal(writes.at(-1).tokens.cache_short, "cache ~24m");
+  current = null; await tick();
+  current = agent("idle", 2); await tick();
+  assert.equal(writes.at(-1).tokens.cache, "cache ?");
 });
 
-test("pane action changes only the estimate and auto clears the override", () => {
+test("pane action changes only the estimate and auto clears the override", async () => {
   const old = process.env.HERDR_PLUGIN_CONTEXT_JSON;
   process.env.HERDR_PLUGIN_CONTEXT_JSON = JSON.stringify({ focused_pane_id: "w1:p1" });
   const writes = [];
-  const request = args => {
-    if (args[0] === "agent") return { agent: agent() };
-    writes.push(args);
+  const request = async (method, params) => {
+    if (method === "agent.get") return { agent: agent() };
+    writes.push(params);
   };
   try {
-    setLifetime("1h", request);
-    assert.ok(writes[0].includes("cache_timer_override=1h"));
-    assert.ok(writes[0].includes(`cache_timer_override_identity=${identity(agent())}`));
-    setLifetime("auto", request);
-    assert.ok(writes[1].includes("--clear-token"));
-    assert.ok(writes[1].includes("cache_timer_override"));
-    assert.equal(writes[1].includes("--ttl-ms"), false);
+    await setLifetime("1h", request);
+    assert.equal(writes[0].tokens.cache_timer_override, "1h");
+    assert.equal(writes[0].tokens.cache_timer_override_identity, identity(agent()));
+    await setLifetime("auto", request);
+    assert.equal(writes[1].tokens.cache_timer_override, null);
+    assert.equal(writes[1].tokens.cache_timer_override_identity, null);
+    assert.equal(writes[1].ttl_ms, undefined);
   } finally {
     if (old === undefined) delete process.env.HERDR_PLUGIN_CONTEXT_JSON;
     else process.env.HERDR_PLUGIN_CONTEXT_JSON = old;

@@ -1,10 +1,10 @@
 "use strict";
 
-const fs = require("node:fs");
+const fs = require("node:fs/promises");
 const path = require("node:path");
 const { api, hash, watch } = require("./watch.js");
 
-const defaults = { codex: "30m", claude: "5m" };
+const defaults = { codex: "30m", claude: "1h" };
 const settled = status => status === "idle" || status === "done";
 const identity = agent => hash(JSON.stringify([
   agent.terminal_id, agent.agent, agent.agent_session?.source,
@@ -19,9 +19,9 @@ function duration(value) {
   return ms;
 }
 
-function config(directory) {
+async function config(directory) {
   let value = {};
-  try { value = JSON.parse(fs.readFileSync(path.join(directory, "config.json"), "utf8")); }
+  try { value = JSON.parse(await fs.readFile(path.join(directory, "config.json"), "utf8")); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
   const isObject = item => item !== null && typeof item === "object" && !Array.isArray(item);
   if (!isObject(value) || (value.agents !== undefined && !isObject(value.agents))) {
@@ -44,7 +44,7 @@ function advance(previous, agent, now) {
     return { identity: key, seq, status: agent.agent_status, completedAt: null };
   }
   // Herdr changes this sequence for lifecycle changes, not viewing a completion.
-  // ponytail: polling estimates completion within 5s; request hooks if precision matters.
+  // ponytail: polling estimates completion within 20s; request hooks if precision matters.
   const completed = Number.isSafeInteger(seq) && seq > previous.seq
     && settled(agent.agent_status) && previous.status !== "unknown";
   return {
@@ -65,20 +65,18 @@ function display(state, ttl, now) {
   return { cache: `cache ${minutes} ${"▰".repeat(filled)}${"▱".repeat(4 - filled)}`, cache_short: `cache ${label}` };
 }
 
-function report(paneId, tokens, request = api, ttl = 30000, source = "display") {
-  const args = ["pane", "report-metadata", paneId, "--source", `plugin:jjliebig.cache-timer.${source}`];
-  if (ttl) args.push("--ttl-ms", String(ttl));
-  for (const [name, value] of Object.entries(tokens)) {
-    args.push(...(value === null ? ["--clear-token", name] : ["--token", `${name}=${value}`]));
-  }
-  request(args);
+function report(paneId, tokens, request = api, ttl = 90000, source = "display") {
+  return request("pane.report_metadata", {
+    pane_id: paneId, source: `plugin:jjliebig.cache-timer.${source}`, tokens,
+    ...(ttl ? { ttl_ms: ttl } : {}),
+  });
 }
 
 function ticker(request = api, readConfig = () => config(process.env.HERDR_PLUGIN_CONFIG_DIR), clock = Date.now) {
   const states = new Map();
-  return () => {
-    const lifetimes = readConfig();
-    const { agents } = request(["agent", "list"]);
+  return async () => {
+    const lifetimes = await readConfig();
+    const { agents } = await request("agent.list");
     const now = clock();
     const present = new Set();
     for (const agent of agents) {
@@ -89,8 +87,8 @@ function ticker(request = api, readConfig = () => config(process.env.HERDR_PLUGI
       states.set(agent.terminal_id, { ...state, paneId: agent.pane_id,
         reportedAt: previous?.reportedAt, text: previous?.text });
       if (tokens.cache !== previous?.text || agent.pane_id !== previous?.paneId
-          || now - previous.reportedAt >= 15000) {
-        report(agent.pane_id, tokens, request);
+          || now - previous.reportedAt >= 60000) {
+        await report(agent.pane_id, tokens, request);
         states.set(agent.terminal_id, { ...state, paneId: agent.pane_id, reportedAt: now, text: tokens.cache });
       }
     }
@@ -99,13 +97,13 @@ function ticker(request = api, readConfig = () => config(process.env.HERDR_PLUGI
   };
 }
 
-function setLifetime(value, request = api) {
+async function setLifetime(value, request = api) {
   if (value !== "auto") duration(value);
   const context = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON || "{}");
   const paneId = context.focused_pane_id || process.env.HERDR_PANE_ID;
   if (!paneId) throw new Error("Choose a cache lifetime from an agent pane.");
-  const { agent } = request(["agent", "get", paneId]);
-  report(paneId, {
+  const { agent } = await request("agent.get", { target: paneId });
+  await report(paneId, {
     cache_timer_override: value === "auto" ? null : value,
     cache_timer_override_identity: value === "auto" ? null : identity(agent),
   }, request, null, "settings");
@@ -113,7 +111,7 @@ function setLifetime(value, request = api) {
 
 async function main() {
   const [command, value] = process.argv.slice(2);
-  if (command === "watch") return watch(ticker(), 5000);
+  if (command === "watch") return watch(ticker(), 20000);
   if (command === "set") return setLifetime(value);
   if (!command || command === "--help") {
     console.log("Cache Timer: start with the Herdr cache-timer.watch action; choose 5m, 30m, 1h, or auto from an agent pane.");

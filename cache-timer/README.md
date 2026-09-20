@@ -35,7 +35,7 @@ bottom border; that requires a separate Herdr UI extension.
 
 ## Choose the estimate
 
-Defaults are **Codex: 30 minutes**, **Claude: 5 minutes**. These are assumptions,
+Defaults are **Codex: 30 minutes**, **Claude: 1 hour**. These are assumptions,
 not measured retention. Unknown agents show `cache ?`.
 
 From an agent pane, use the plugin actions to select 5 minutes, 30 minutes,
@@ -57,7 +57,7 @@ To change defaults, create `config.json` in the directory printed by
 ```
 
 Keys match Herdr's `agent` labels, ignoring case. Values are positive durations
-in minutes or hours; `null` means unknown. Changes apply within five seconds.
+in minutes or hours; `null` means unknown. Changes apply on the next 20-second check.
 There is no automatic model, provider, subscription, or environment detection.
 After switching models or providers in the same session, choose the matching
 estimate yourself. A custom provider using the Codex label inherits its default.
@@ -72,11 +72,12 @@ Why these defaults (checked September 20, 2026):
   included subscription usage normally gives the main conversation one hour;
   API/cloud/usage-credit billing defaults to five minutes. Subagents generally
   use five minutes. `promptCacheTtl` and `subagentPromptCacheTtl` can request
-  different lifetimes. Select one hour here if that is your actual setup.
+  different lifetimes. The plugin defaults to the main subscription conversation;
+  select five minutes for billed usage or subagents when appropriate.
 
 ## What the timer knows
 
-The watcher checks Herdr's lifecycle sequence every five seconds. A new settled
+The watcher checks Herdr's lifecycle sequence every 20 seconds. A new settled
 state starts the estimate, including short turns completed between checks.
 Focusing a completed pane or refreshing its title does not restart it.
 `cache working` replaces the countdown while the agent works; time still passes
@@ -92,8 +93,15 @@ The provider's clock follows requests, not the final message. Long responses,
 compaction, prefix changes, routing, or mixed cache lifetimes can make the
 estimate optimistic. `0m` (or `window elapsed` in the compact display) does not
 prove eviction. No keepalive
-requests are sent. Display metadata expires within 30 seconds if the watcher
+requests are sent. Display metadata expires within 90 seconds if the watcher
 stops, the plugin is disabled, or the pane stops being an agent.
+
+All file and socket I/O is asynchronous. The watcher talks directly to Herdr's
+local socket/Windows named pipe: no CLI subprocesses, transcript reads, or provider
+requests. Each cycle reads plugin status and the agent list once. Pane metadata
+is written only when the display changes or its 60-second renewal is due. Cycles
+run sequentially, with a 20-second wait between them; slow requests never overlap
+the next cycle.
 
 ## Validate
 
