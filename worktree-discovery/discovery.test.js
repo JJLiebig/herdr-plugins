@@ -3,7 +3,39 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createHash } = require("node:crypto");
 const digest = value => createHash("sha256").update(value).digest("hex");
-const { reconcile, key, GRACE, terminalPR } = require("./discovery.js");
+const { collectInventories, reconcile, key, GRACE, terminalPR } = require("./discovery.js");
+
+test("inventory scans deduplicate checkouts and failed repositories while retaining cleanup", () => {
+  const snapshot = {
+    workspaces: ["/repo", "/linked"].map(checkout_path => ({ worktree: { checkout_path, repo_key: "/repo/.git" } })),
+    panes: ["/repo", "/repo", "/linked", "/other", "/other-linked"].map(cwd => ({ agent: "codex", cwd })),
+  };
+  const state = { owned: {
+    a: { cwd: "/linked", repo: key("/repo/.git") },
+    b: { cwd: "/retired", repo: key("/retired/.git") },
+    c: { cwd: "/retired-linked", repo: key("/retired/.git") },
+  } };
+  const calls = [];
+  const request = args => {
+    const cwd = args.at(-1); calls.push(cwd);
+    return { source: { repo_key: `${cwd}/.git` }, worktrees: [{ path: cwd }, { path: `${cwd}-linked` }] };
+  };
+  const inventories = collectInventories(snapshot, state, request);
+  assert.deepEqual(calls, ["/repo", "/other", "/retired"]);
+  assert.deepEqual(inventories.map(i => i.active), [true, true, false]);
+  calls.length = 0;
+  const failed = collectInventories(snapshot, state, args => {
+    if (["/repo", "/retired"].includes(args.at(-1))) {
+      calls.push(args.at(-1)); throw new Error("unavailable");
+    }
+    return request(args);
+  });
+  assert.deepEqual(calls, ["/repo", "/other", "/retired"]);
+  assert.equal(failed.length, 1);
+  calls.length = 0;
+  collectInventories(snapshot, state, request);
+  assert.deepEqual(calls, ["/repo", "/other", "/retired"]);
+});
 
 function fixture() {
   const state = { repos: {}, owned: {} };

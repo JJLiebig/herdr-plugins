@@ -13,7 +13,11 @@ herdr plugin action invoke jjliebig.worktree-discovery.watch
 
 Requires Node.js 18+ and Herdr 0.9.0+. Discovery starts automatically with Herdr;
 the action starts it immediately after installation. Repeating it is harmless.
-Disable the plugin to stop discovery (within one scan, normally ten seconds).
+Scans run sequentially with a 60-second pause between scans. Checkouts sharing
+a known repository use one lookup per scan; returned inventories identify sibling
+checkouts too. Failed repositories retry on the next scan. Repository identities
+are rebuilt each scan so moving a checkout does not leave a persistent stale cache.
+Disable the plugin to stop discovery (within one scan, normally one minute).
 
 The first scan of a repository remembers existing worktrees without opening
 them. Subsequent scans open newly discovered worktrees, one space per checkout.
@@ -34,7 +38,7 @@ that PR and branch. A reopened/replaced PR or failed/stale lookup resets the
 wait. Without GitHub Tools, discovery still works; PR-based retirement does not.
 
 Removing a worktree retires its auto-added space on the next scan (normally within
-ten seconds), without waiting for a PR or the 30-minute grace period. Discovery
+one minute), without waiting for a PR or the 30-minute grace period. Discovery
 pins each new space's initial name so checkout removal cannot automatically rename
 it; an explicit user rename still keeps the space. A focused space or busy shell
 waits until you leave it or the command finishes, then cleanup retries.

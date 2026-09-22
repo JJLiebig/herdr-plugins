@@ -131,27 +131,44 @@ function reconcile(state, snapshot, inventories, io, now = Date.now()) {
   io.save(state);
 }
 
+function collectInventories(snapshot, state, request = api) {
+  const inventories = new Map();
+  const repositories = new Map();
+  for (const workspace of snapshot.workspaces) {
+    const info = workspace.worktree;
+    if (info?.checkout_path && info.repo_key) repositories.set(key(info.checkout_path), key(info.repo_key));
+  }
+  const attempted = new Set();
+  const scan = (cwd, active, knownRepo) => {
+    const checkout = key(cwd);
+    const repo = repositories.get(checkout) || knownRepo;
+    if (attempted.has(repo || checkout)) return;
+    attempted.add(repo || checkout);
+    try {
+      const inventory = request(["worktree", "list", "--cwd", cwd]);
+      const resolved = key(inventory.source.repo_key);
+      attempted.add(resolved);
+      repositories.set(checkout, resolved);
+      for (const worktree of inventory.worktrees) repositories.set(key(worktree.path), resolved);
+      inventory.active = active;
+      inventories.set(resolved, inventory);
+    } catch (error) { console.error(`${cwd}: ${error.message}`); }
+  };
+  for (const pane of snapshot.panes) {
+    if (pane.agent && pane.cwd) scan(pane.cwd, true);
+  }
+  // Existing managed spaces keep their cleanup lifecycle after the parent exits.
+  for (const entry of Object.values(state.owned)) {
+    scan(entry.cwd, false, entry.repo);
+  }
+  return [...inventories.values()];
+}
+
 function tick() {
   const file = path.join(directory(), "state.json");
   const state = load(file);
   const snapshot = api(["api", "snapshot"]).snapshot;
-  const inventories = new Map();
-  const paths = new Set(snapshot.panes.filter(p => p.agent && p.cwd).map(p => p.cwd));
-  for (const cwd of paths) {
-    try {
-      const inventory = api(["worktree", "list", "--cwd", cwd]);
-      inventories.set(key(inventory.source.repo_key), inventory);
-    } catch (error) { console.error(`${cwd}: ${error.message}`); }
-  }
-  // Existing managed spaces keep their cleanup lifecycle after the parent exits.
-  for (const entry of Object.values(state.owned)) {
-    if (inventories.has(entry.repo)) continue;
-    try {
-      const inventory = api(["worktree", "list", "--cwd", entry.cwd]);
-      inventory.active = false;
-      inventories.set(key(inventory.source.repo_key), inventory);
-    } catch (error) { console.error(`${entry.cwd}: ${error.message}`); }
-  }
+  const inventories = collectInventories(snapshot, state);
   const io = {
     save: state => save(file, state),
     open: (cwd, checkout, branch) => {
@@ -179,11 +196,11 @@ function tick() {
         && info.foreground_processes[0].pid === info.shell_pid;
     },
   };
-  reconcile(state, snapshot, [...inventories.values()], io);
+  reconcile(state, snapshot, inventories, io);
 }
 
 function main(mode = process.argv[2]) {
-  if (mode === "watch") return watch(tick, 10000);
+  if (mode === "watch") return watch(tick, 60000);
   if (mode === "keep") {
     const context = JSON.parse(process.env.HERDR_PLUGIN_CONTEXT_JSON || "{}");
     if (context.workspace_id) fs.writeFileSync(keepFile(context.workspace_id), "");
@@ -195,4 +212,4 @@ if (require.main === module) Promise.resolve().then(() => main()).catch(error =>
   console.error(error.message);
   process.exitCode = 1;
 });
-module.exports = { reconcile, terminalPR, untouched, key, GRACE, FRESH };
+module.exports = { collectInventories, reconcile, terminalPR, untouched, key, GRACE, FRESH };
