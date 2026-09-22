@@ -82,7 +82,7 @@ The cache display is hidden while the agent works; time still passes
 while blocked. The bar measures the assumed time window, not cached tokens.
 
 Initially, and after the watcher restarts or Herdr reports a different session,
-the display is `cache ?` until a new completion is observed. No conversation
+the display is hidden until a new completion is observed. No conversation
 transcripts are read or stored. Without a reported session ID, an in-place
 session change cannot always be distinguished. Interrupted work can also settle
 to idle: this estimates lifecycle completion, not successful provider caching.

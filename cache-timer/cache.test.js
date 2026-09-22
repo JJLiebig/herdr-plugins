@@ -15,7 +15,7 @@ const agent = (status = "idle", seq = 1, extra = {}) => ({
 
 test("completion ages without focus resets, including a short turn between polls", () => {
   let state = advance(null, agent(), 0);
-  assert.equal(display(state, 1800000, 0).cache, "cache ?");
+  assert.deepEqual(display(state, 1800000, 0), { cache: null, cache_short: null });
   state = advance(state, agent("working", 2), 1000);
   assert.deepEqual(display(state, 1800000, 1000), { cache: null, cache_short: null });
   state = advance(state, agent("done", 3), 2000);
@@ -38,7 +38,9 @@ test("session replacement and sequence rollback discard old estimates; moving pr
   assert.equal(state.completedAt, 1000);
   for (const changed of [agent("idle", 1), agent("idle", 3, { agent: "claude" }),
     agent("idle", 3, { agent_session: { ...agent().agent_session, value: "session-2" } })]) {
-    assert.equal(advance(state, changed, 3000).completedAt, null);
+    const reset = advance(state, changed, 3000);
+    assert.equal(reset.completedAt, null);
+    assert.deepEqual(display(reset, 300000, 3000), { cache: null, cache_short: null });
   }
   const unknown = advance(state, agent("unknown", 3), 3000);
   assert.equal(display(unknown, 300000, 3000).cache, "cache ?");
@@ -94,7 +96,7 @@ test("ticker publishes expiring metadata, retries failures, and retains time acr
   assert.equal(writes.at(-1).tokens.cache_short, "cache ~24m");
   current = null; await tick();
   current = agent("idle", 2); await tick();
-  assert.equal(writes.at(-1).tokens.cache, "cache ?");
+  assert.deepEqual(writes.at(-1).tokens, { cache: null, cache_short: null });
 });
 
 test("pane action changes only the estimate and auto clears the override", async () => {

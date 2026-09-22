@@ -54,8 +54,8 @@ function advance(previous, agent, now) {
 }
 
 function display(state, ttl, now) {
-  if (state.status === "working") return { cache: null, cache_short: null };
-  if (state.status === "unknown" || ttl === null || state.completedAt === null) {
+  if (state.status === "working" || state.completedAt === null) return { cache: null, cache_short: null };
+  if (state.status === "unknown" || ttl === null) {
     return { cache: "cache ?", cache_short: "cache ?" };
   }
   const remaining = Math.max(0, ttl - Math.max(0, now - state.completedAt));
