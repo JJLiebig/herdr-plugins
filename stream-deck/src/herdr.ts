@@ -17,6 +17,8 @@ import {
 import { copiedThemeFromHerdrConfig } from "./theme.js";
 
 const run = promisify(execFile);
+const SNAPSHOT_TIMEOUT_MS = 5000;
+const OFFLINE_GRACE_MS = 10000;
 
 type Listener = () => void;
 type PinRequestListener = (pane: PaneSnapshot) => void;
@@ -41,6 +43,7 @@ export class HerdrBridge {
   private readonly pinRequestListeners = new Set<PinRequestListener>();
   private running = false;
   private signature = "";
+  private lastSnapshotAt = 0;
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -96,9 +99,10 @@ export class HerdrBridge {
 
   private async refresh(): Promise<void> {
     try {
-      const { stdout } = await this.command(["api", "snapshot"]);
+      const { stdout } = await this.command(["api", "snapshot"], SNAPSHOT_TIMEOUT_MS);
       const snapshot = snapshotFromApi(JSON.parse(stdout.toString()));
       if (!snapshot) throw new Error("invalid session snapshot");
+      this.lastSnapshotAt = performance.now();
       this.snapshot = snapshot;
       this.theme = hasResolvedTheme(snapshot.theme) ? snapshot.theme : await copiedThemeFromHerdrConfig();
       const signature = JSON.stringify({
@@ -117,7 +121,8 @@ export class HerdrBridge {
         this.emit();
       }
     } catch {
-      if (this.snapshot !== null) {
+      // Keep the last good state through brief CLI/server interruptions.
+      if (this.snapshot !== null && performance.now() - this.lastSnapshotAt >= OFFLINE_GRACE_MS) {
         this.snapshot = null;
         this.theme = null;
         this.signature = "";
@@ -143,11 +148,11 @@ export class HerdrBridge {
     }
   }
 
-  private command(args: string[]): ReturnType<typeof run> {
+  private command(args: string[], timeout = 2500): ReturnType<typeof run> {
     return run(process.env.HERDR_PATH || installedHerdrPath || "herdr", args, {
       encoding: "utf8",
       maxBuffer: 4 * 1024 * 1024,
-      timeout: 2500,
+      timeout,
       windowsHide: true
     });
   }
